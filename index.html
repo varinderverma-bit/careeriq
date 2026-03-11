@@ -49,12 +49,39 @@ const CANDIDATES = [
   cis:83, successPct:76, hiringRisk:'Medium',
   riskReasons:['Emotion management (60%) may surface in conflict scenarios','Assertiveness gap (64%) could limit hard-negotiation outcomes','Average tenure 1.8 yrs — monitor early engagement closely'],
   scores:[
-    {k:'fit',      l:'Role Fit',      v:87, d:'Skills match, industry relevance & experience alignment'},
-    {k:'impact',   l:'Impact',        v:78, d:'Revenue impact, team scale & project complexity signals'},
-    {k:'traj',     l:'Trajectory',    v:82, d:'Promotion velocity & career progression pattern'},
-    {k:'stability',l:'Stability',     v:64, d:'Retention predictor — avg tenure & role-switching pattern'},
-    {k:'skill',    l:'Skill Depth',   v:80, d:'Depth vs breadth of stated competencies'},
-    {k:'culture',  l:'Culture Fit',   v:81, d:'Behavioural & communication style alignment'},
+    {k:'fit',      l:'Role Fit',      v:87, d:'Skills match, industry relevance & experience alignment',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'14 yrs career history · 23 peer recommendations · 47 skill endorsements analysed'},
+        {name:'TEIQue',    color:'#4f46e5', note:'Sociability 73 & Emotionality 97 — strong client-facing & stakeholder alignment signal'},
+        {name:'Meetup',    color:'#ed1c40', note:'12 leadership & BD community events attended in the past 18 months'},
+      ]},
+    {k:'impact',   l:'Impact',        v:78, d:'Revenue impact, team scale & project complexity signals',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'VP-level roles with P&L ownership across 3 organisations · led teams up to 35'},
+        {name:'PPA',       color:'#ec4899', note:'Influencer (I-type) — drives results, motivates others, opens new accounts'},
+      ]},
+    {k:'traj',     l:'Trajectory',    v:82, d:'Promotion velocity & career progression pattern',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'3 promotions in 12 years · avg 2.1 yrs to each next seniority level'},
+        {name:'TEIQue',    color:'#4f46e5', note:'Self-Motivation 94 — strongly correlates with sustained career progression'},
+      ]},
+    {k:'stability',l:'Stability',     v:64, d:'Retention predictor — avg tenure & role-switching pattern',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Average tenure 1.8 yrs — below sector median of 2.6 yrs · 4 companies in 12 yrs'},
+        {name:'TEIQue',    color:'#4f46e5', note:'Emotion Management 60 flagged — elevated disengagement risk under sustained conflict'},
+      ]},
+    {k:'skill',    l:'Skill Depth',   v:80, d:'Depth vs breadth of stated competencies',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'BD, partnerships, SaaS, CRM — 8 core skills with 10+ peer endorsements each'},
+        {name:'TEIQue',    color:'#4f46e5', note:'Self-Motivation 94 — strong internal driver of continuous skill development'},
+        {name:'Meetup',    color:'#ed1c40', note:'Speaker at 3 industry conferences — verified domain expertise signals'},
+      ]},
+    {k:'culture',  l:'Culture Fit',   v:81, d:'Behavioural & communication style alignment',
+      sources:[
+        {name:'TEIQue',    color:'#4f46e5', note:'Wellbeing 94 & Relationships 99 — outstanding interpersonal & cultural alignment'},
+        {name:'PPA',       color:'#ec4899', note:'Influencer profile — collaborative, inclusive, positive team environment driver'},
+        {name:'Meetup',    color:'#ed1c40', note:'Active community mentor · consistent peer engagement & knowledge sharing'},
+      ]},
   ],
   copilot:{
     strengths:['Exceptional Emotional Intelligence (97%) — rare at senior level','Near-perfect Relationships (99%), Empathy (95%), Expression (97%)','Self-Motivation (94%) and Stress Management (93%) — performs under pressure','Integrative leadership: works through people, delegates, sees big picture'],
@@ -66,6 +93,7 @@ const CANDIDATES = [
   },
   assessments:['teique','ppa'],
   teique:{
+    sourceInfo:{instrument:'TEIQue — Trait Emotional Intelligence Questionnaire',provider:'Thomas International',administered:'March 2024',items:'153-item validated psychometric questionnaire',norm:'Norm-referenced against 13,000+ global professionals'},
     overall:97,
     factors:[
       {l:'Wellbeing',    v:94, color:'#10b981'},
@@ -88,6 +116,7 @@ const CANDIDATES = [
     ],
   },
   ppa:{
+    sourceInfo:{instrument:'PPA — Personal Profile Analysis',provider:'Thomas International',administered:'March 2024',items:'24 forced-choice word groups · DISC-based instrument',norm:'Validated against 33 million profiles worldwide'},
     style:'Influencer (I-type)',
     selfImage:'Integrative leader who works through people with an outgoing interest in others. Poised, confident, and persuasive — with a tendency to act impulsively or oversell. Coordinates well, delegates effectively, and sees the big picture.',
     motivators:['Popularity and social recognition','Democratic relationships and inclusive environments','Tangible rewards, power, challenge, and advancement','Favourable working conditions and freedom from control'],
@@ -103,12 +132,36 @@ const CANDIDATES = [
   cis:78, successPct:71, hiringRisk:'Low',
   riskReasons:['Excessive Risk Approach (84) may lead to impulsive strategic decisions','Curiosity at Moderate (44) — may resist significant innovation initiatives'],
   scores:[
-    {k:'fit',      l:'Role Fit',      v:75, d:'Skills match, industry relevance & experience alignment'},
-    {k:'impact',   l:'Impact',        v:71, d:'Revenue impact, team scale & project complexity signals'},
-    {k:'traj',     l:'Trajectory',    v:79, d:'Promotion velocity & career progression pattern'},
-    {k:'stability',l:'Stability',     v:82, d:'Retention predictor — avg tenure & role-switching pattern'},
-    {k:'skill',    l:'Skill Depth',   v:68, d:'Depth vs breadth of stated competencies'},
-    {k:'culture',  l:'Culture Fit',   v:74, d:'Behavioural & communication style alignment'},
+    {k:'fit',      l:'Role Fit',      v:75, d:'Skills match, industry relevance & experience alignment',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'15 yrs Ops leadership · Director-level confirmed at 3 FTSE-listed organisations'},
+        {name:'HPTI',      color:'#0891b2', note:'Conscientiousness 74 (Optimal) — directly maps to operational leadership requirements'},
+      ]},
+    {k:'impact',   l:'Impact',        v:71, d:'Revenue impact, team scale & project complexity signals',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Led teams of 50–200 · P&L accountability confirmed in 2 consecutive Director roles'},
+        {name:'HPTI',      color:'#0891b2', note:'Risk Approach 84 (Excessive) — bold & proactive impact driver; caution on impulsivity'},
+      ]},
+    {k:'traj',     l:'Trajectory',    v:79, d:'Promotion velocity & career progression pattern',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Steady progression: Analyst → Manager → Director in 10 years · no lateral moves'},
+        {name:'HPTI',      color:'#0891b2', note:'Competitiveness 52 (Moderate) — collaborative ascent, not politically driven'},
+      ]},
+    {k:'stability',l:'Stability',     v:82, d:'Retention predictor — avg tenure & role-switching pattern',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Average tenure 3.4 yrs — well above sector median · no unexplained gaps in 15 yrs'},
+        {name:'HPTI',      color:'#0891b2', note:'Adjustment 66 (Optimal) — strong resilience under stress reduces attrition risk'},
+      ]},
+    {k:'skill',    l:'Skill Depth',   v:68, d:'Depth vs breadth of stated competencies',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Ops, supply chain, process improvement — deep functional expertise, narrower breadth'},
+        {name:'HPTI',      color:'#0891b2', note:'Curiosity 44 (Moderate) — consistent depth but limited cross-domain exploration signals'},
+      ]},
+    {k:'culture',  l:'Culture Fit',   v:74, d:'Behavioural & communication style alignment',
+      sources:[
+        {name:'LinkedIn',  color:'#0077b5', note:'Recommendations highlight collaborative style and stakeholder empathy across cultures'},
+        {name:'HPTI',      color:'#0891b2', note:'Competitiveness 52 & Adjustment 66 — calm, team-oriented, non-political leader profile'},
+      ]},
   ],
   copilot:{
     strengths:['Optimal Conscientiousness (74) — highly organized, goal-driven, strong follow-through','Optimal Adjustment (66) — calm under pressure, resilient leadership under stress','High Stability score (82) — low attrition risk, long-term retention likely','Collaborative by nature — fosters team dynamics over personal recognition'],
@@ -119,6 +172,7 @@ const CANDIDATES = [
     recDetail:'Strong operational leadership candidate. Pair with structured decision frameworks to channel bold risk appetite into strategic rather than reactive moves.',
   },
   assessments:['hpti'],
+  hptiSourceInfo:{instrument:'HPTI — High Performance Traits Inventory',provider:'Thomas International',administered:'February 2024',items:'6-trait personality inventory · 78 self-report items',norm:'Validated for senior leadership prediction across 12 industries'},
   hpti:[
     {l:'Conscientiousness',v:74,zone:'Optimal',  color:'#ec4899',impl:'Highly organized & driven — watch for perfectionism',         develop:'Balance perfectionism with practicality; delegate and define "fit-for-purpose" standards.'},
     {l:'Adjustment',       v:66,zone:'Optimal',  color:'#0ea5e9',impl:'Calm under pressure — may appear emotionally detached',       develop:'Empathize with stressed colleagues; your calmness may be misread as detachment.'},
@@ -149,6 +203,53 @@ const ICONS = {
   search:'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
   plus:'M12 4v16m8-8H4',
 };
+
+/* ── Data Provenance Box ── */
+function DataProvenanceBox({sources}){
+  return (
+    <div style={{marginTop:10,paddingTop:10,borderTop:'1px dashed #e2e8f0'}}>
+      <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
+        <span style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em'}}>Data Provenance</span>
+        <span style={{fontSize:9,fontWeight:700,padding:'1px 7px',borderRadius:10,background:'#dcfce7',color:'#166534',border:'1px solid #bbf7d0'}}>No Resume</span>
+      </div>
+      {sources.map(s=>(
+        <div key={s.name} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:6}}>
+          <span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:4,flexShrink:0,marginTop:1,
+            background:s.color+'18',color:s.color,border:`1px solid ${s.color}35`}}>{s.name}</span>
+          <span style={{fontSize:11,color:'#64748b',lineHeight:1.45}}>{s.note}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Assessment Provenance Banner ── */
+function AssessmentProvenance({info}){
+  return (
+    <div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'13px 16px',
+      background:'linear-gradient(90deg,#f0f9ff,#f8fafc)',border:'1px solid #bae6fd',borderRadius:10}}>
+      <div style={{width:34,height:34,background:'#0ea5e9',borderRadius:9,display:'flex',
+        alignItems:'center',justifyContent:'center',flexShrink:0}}>
+        <Icon d={ICONS.check} size={17} color="#fff"/>
+      </div>
+      <div style={{flex:1}}>
+        <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:8,marginBottom:6}}>
+          <span style={{fontSize:13,fontWeight:700,color:'#0c4a6e'}}>{info.instrument}</span>
+          <span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:20,background:'#dcfce7',
+            color:'#166534',border:'1px solid #bbf7d0'}}>Zero Resume Dependency</span>
+        </div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:14}}>
+          {[['Provider',info.provider],['Administered',info.administered],['Format',info.items],['Benchmark',info.norm]].map(([l,v])=>(
+            <div key={l} style={{fontSize:11}}>
+              <span style={{fontWeight:700,color:'#0369a1'}}>{l}: </span>
+              <span style={{color:'#475569'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── MiniRing ── */
 function MiniRing({v,size=44}){
@@ -460,6 +561,7 @@ function OverviewTab({c}){
                   <div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/>
                 </div>
                 <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{s.d}</div>
+                {s.sources&&<DataProvenanceBox sources={s.sources}/>}
               </div>
             );
           })}
@@ -544,6 +646,7 @@ function TeIQueTab({data}){
   const groupColors={'Wellbeing':'#10b981','Emotionality':'#4f46e5','Self-Control':'#0ea5e9','Sociability':'#f59e0b'};
   return (
     <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
       {/* Header row */}
       <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:20}}>
         <div className="card" style={{padding:24,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minWidth:220}}>
@@ -626,6 +729,7 @@ function TeIQueTab({data}){
 function PpaTab({data}){
   return (
     <div className="fade" style={{display:'flex',flexDirection:'column',gap:16}}>
+      {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
         {/* Style */}
         <div className="card" style={{padding:20,borderTop:'3px solid #ec4899'}}>
@@ -685,9 +789,10 @@ function PpaTab({data}){
 }
 
 /* ── HPTI TAB ── */
-function HptiTab({traits}){
+function HptiTab({traits,sourceInfo}){
   return (
     <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      {sourceInfo&&<AssessmentProvenance info={sourceInfo}/>}
       <div style={{padding:'14px 18px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,color:'#475569',lineHeight:1.6}}>
         <strong style={{color:'#1e293b'}}>About HPTI: </strong>
         Six stable personality traits linked to senior leadership potential. Scores are classified as <em>Low, Moderate, Optimal,</em> or <em>Excessive</em> — each indicating different leadership implications. Traits are not predictive in isolation; success also depends on skills, motivation, and experience.
@@ -865,7 +970,7 @@ function Profile({c,onBack}){
         {tab==='overview' && <OverviewTab c={c}/>}
         {tab==='teique'   && <TeIQueTab data={c.teique}/>}
         {tab==='ppa'      && <PpaTab data={c.ppa}/>}
-        {tab==='hpti'     && <HptiTab traits={c.hpti}/>}
+        {tab==='hpti'     && <HptiTab traits={c.hpti} sourceInfo={c.hptiSourceInfo}/>}
         {tab==='dev'      && <DevTab c={c}/>}
       </div>
     </div>
