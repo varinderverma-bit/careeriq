@@ -1,23 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>CareerIQ — Candidate Intelligence Platform</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f8fafc}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Inter',sans-serif;background:#f8fafc}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
 .card{background:#fff;border:1px solid #e2e8f0;border-radius:14px}
-.card-h{transition:box-shadow .18s,transform .18s;cursor:pointer}
-.card-h:hover{box-shadow:0 12px 30px -5px rgba(0,0,0,.12);transform:translateY(-2px)}
-.fade{animation:fi .25s ease}
-@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card-h{transition:box-shadow .18s,transform .18s;cursor:pointer}.card-h:hover{box-shadow:0 12px 30px -5px rgba(0,0,0,.12);transform:translateY(-2px)}
+.fade{animation:fi .25s ease}@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .bar{transition:width 1s cubic-bezier(.4,0,.2,1)}
 .sidebar{width:256px;min-width:256px;background:#030712;height:100vh;display:flex;flex-direction:column;border-right:1px solid #1f2937}
 .pulse{animation:p 2s infinite}@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:center;justify-content:center;padding:24px}
 </style>
 </head>
 <body>
@@ -26,975 +23,473 @@ body{font-family:'Inter',sans-serif;background:#f8fafc}
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
 <script type="text/babel" data-presets="react">
-const { useState } = React;
-
-/* ── colour helper ── */
-const sc = v => v>=85?{hex:'#10b981',label:'Excellent',bg:'#ecfdf5',tc:'#065f46'}
-              :v>=70?{hex:'#4f46e5',label:'Strong',   bg:'#eef2ff',tc:'#3730a3'}
-              :v>=55?{hex:'#f59e0b',label:'Good',     bg:'#fffbeb',tc:'#92400e'}
-              :      {hex:'#ef4444',label:'Developing',bg:'#fef2f2',tc:'#991b1b'};
-
-const zoneStyle = z => ({
-  Optimal:   {bg:'#dcfce7',tc:'#166534',hex:'#16a34a'},
-  Moderate:  {bg:'#fef9c3',tc:'#854d0e',hex:'#ca8a04'},
-  Excessive: {bg:'#fae8ff',tc:'#6b21a8',hex:'#9333ea'},
-  Low:       {bg:'#fee2e2',tc:'#991b1b',hex:'#dc2626'},
-}[z] || {bg:'#f1f5f9',tc:'#475569',hex:'#64748b'});
-
-/* ── DATA ── */
-const CANDIDATES = [
-{
-  id:1, name:'Mr. XX Sample', title:'Senior Business Development Director',
-  loc:'Dubai, UAE', initials:'XX', color:'#4f46e5', exp:12,
-  cis:83, successPct:76, hiringRisk:'Medium',
-  riskReasons:['Emotion management (60%) may surface in conflict scenarios','Assertiveness gap (64%) could limit hard-negotiation outcomes','Average tenure 1.8 yrs — monitor early engagement closely'],
-  scores:[
-    {k:'fit',      l:'Role Fit',      v:87, d:'Skills match, industry relevance & experience alignment',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'14 yrs career history · 23 peer recommendations · 47 verified skill endorsements'},
-        {name:'Medium',        color:'#000000', note:'11 published articles on BD strategy & SaaS partnerships — avg 2.4K reads each'},
-        {name:'Meetup',        color:'#ed1c40', note:'12 leadership & BD community events attended · organiser of 2 local chapters'},
-        {name:'TEIQue',        color:'#4f46e5', note:'Sociability 73 & Emotionality 97 — strong client-facing & stakeholder alignment'},
-      ]},
-    {k:'impact',   l:'Impact',        v:78, d:'Revenue impact, team scale & project complexity signals',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'VP-level P&L ownership across 3 organisations · teams up to 35 · $12M pipeline managed'},
-        {name:'Medium',        color:'#000000', note:'Article "Scaling BD in MENA" — 8.1K views, cited by 4 industry publications'},
-        {name:'Reddit',        color:'#ff4500', note:'r/sales & r/startups: 340 upvoted answers on go-to-market strategy — high peer trust signal'},
-        {name:'PPA',           color:'#ec4899', note:'Influencer (I-type) — drives results through others, opens new accounts, motivates teams'},
-      ]},
-    {k:'traj',     l:'Trajectory',    v:82, d:'Promotion velocity & career progression pattern',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'3 promotions in 12 years · avg 2.1 yrs to next seniority level — above sector norm'},
-        {name:'Coursera',      color:'#0056d2', note:'6 verified certificates: Strategic Leadership, SaaS Growth, Negotiation Mastery (2021–2024)'},
-        {name:'TEIQue',        color:'#4f46e5', note:'Self-Motivation 94 — strongly correlates with sustained career trajectory'},
-      ]},
-    {k:'stability',l:'Stability',     v:64, d:'Retention predictor — avg tenure & role-switching pattern',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Average tenure 1.8 yrs — below sector median of 2.6 yrs · 4 employers in 12 yrs'},
-        {name:'Reddit',        color:'#ff4500', note:'r/cscareerquestions activity shows restlessness patterns — frequent "should I switch?" posts'},
-        {name:'TEIQue',        color:'#4f46e5', note:'Emotion Management 60 flagged — elevated disengagement risk under sustained conflict'},
-        {name:'Meetup',        color:'#ed1c40', note:'Registered at 7 different city chapters — high mobility & exploratory behaviour signals'},
-      ]},
-    {k:'skill',    l:'Skill Depth',   v:80, d:'Depth vs breadth of stated competencies',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'BD, SaaS, CRM, partnerships — 8 core skills with 10+ peer endorsements each'},
-        {name:'GitHub',        color:'#24292f', note:'3 public repos: CRM automation scripts & BD pipeline tools · 47 stars · active since 2019'},
-        {name:'Stack Overflow',color:'#f48024', note:'Reputation 1,840 · 28 answers on CRM integrations & sales automation accepted as best'},
-        {name:'Coursera',      color:'#0056d2', note:'Certificates in HubSpot, Salesforce Admin, and Google Analytics — all completed with distinction'},
-        {name:'Medium',        color:'#000000', note:'Deep-dive technical articles on API-led CRM integrations confirm applied knowledge'},
-      ]},
-    {k:'culture',  l:'Culture Fit',   v:81, d:'Behavioural & communication style alignment',
-      sources:[
-        {name:'TEIQue',        color:'#4f46e5', note:'Wellbeing 94 & Relationships 99 — outstanding interpersonal & cultural alignment score'},
-        {name:'PPA',           color:'#ec4899', note:'Influencer profile — collaborative, inclusive, generates team enthusiasm naturally'},
-        {name:'Reddit',        color:'#ff4500', note:'Constructive, supportive tone across 200+ comments — no toxicity flags in 3-yr history'},
-        {name:'Meetup',        color:'#ed1c40', note:'Active community mentor across 3 groups · consistent peer engagement & knowledge sharing'},
-      ]},
-  ],
-  copilot:{
-    strengths:['Exceptional Emotional Intelligence (97%) — rare at senior level','Near-perfect Relationships (99%), Empathy (95%), Expression (97%)','Self-Motivation (94%) and Stress Management (93%) — performs under pressure','Integrative leadership: works through people, delegates, sees big picture'],
-    concerns:['Emotion Management at 60% — recovery from conflict may be slow','Assertiveness at 64% — may underperform in direct negotiation scenarios','Tendency to act impulsively; stability score reflects attrition risk'],
-    rec:'Proceed to Interview',
-    recColor:'#059669',
-    recBg:'#ecfdf5',
-    recDetail:'Strong cultural and leadership fit. Schedule 6–8 coaching sessions focused on emotion management and assertiveness before onboarding.',
-  },
-  assessments:['teique','ppa'],
-  teique:{
-    sourceInfo:{instrument:'TEIQue — Trait Emotional Intelligence Questionnaire',provider:'Thomas International',administered:'March 2024',items:'153-item validated psychometric questionnaire',norm:'Norm-referenced against 13,000+ global professionals'},
-    overall:97,
-    factors:[
-      {l:'Wellbeing',    v:94, color:'#10b981'},
-      {l:'Emotionality', v:97, color:'#4f46e5'},
-      {l:'Self-Control', v:91, color:'#0ea5e9'},
-      {l:'Sociability',  v:73, color:'#f59e0b'},
-    ],
-    groups:[
-      {g:'Wellbeing',    items:[{l:'Happiness',v:99},{l:'Optimism',v:83},{l:'Self-Esteem',v:99}]},
-      {g:'Emotionality', items:[{l:'Emotion Expression',v:97},{l:'Emotion Perception',v:97},{l:'Empathy',v:95},{l:'Relationships',v:99}]},
-      {g:'Self-Control', items:[{l:'Emotion Regulation',v:86},{l:'Impulse Control',v:93},{l:'Stress Management',v:93}]},
-      {g:'Sociability',  items:[{l:'Social Awareness',v:95},{l:'Assertiveness',v:64},{l:'Emotion Management',v:60}]},
-    ],
-    global:[{l:'Self-Motivation',v:94},{l:'Adaptability',v:66}],
-    roleFit:['Senior client-facing leadership','Founder / CEO roles','Culture & talent leadership','Coaching and stakeholder-heavy assignments'],
-    dev:[
-      {area:'Emotion Management',v:60,action:'Adopt a 2–3 min pause-reflect-label routine after triggering events. Weekly log + peer debrief.'},
-      {area:'Assertiveness',     v:64,action:'Practice "I + impact" feedback script in 3 low-risk conversations/week. Progressively raise stakes.'},
-      {area:'Adaptability',      v:66,action:'Take 2 cross-functional stretch assignments over 6 months. One-page weekly reflection.'},
-    ],
-  },
-  ppa:{
-    sourceInfo:{instrument:'PPA — Personal Profile Analysis',provider:'Thomas International',administered:'March 2024',items:'24 forced-choice word groups · DISC-based instrument',norm:'Validated against 33 million profiles worldwide'},
-    style:'Influencer (I-type)',
-    selfImage:'Integrative leader who works through people with an outgoing interest in others. Poised, confident, and persuasive — with a tendency to act impulsively or oversell. Coordinates well, delegates effectively, and sees the big picture.',
-    motivators:['Popularity and social recognition','Democratic relationships and inclusive environments','Tangible rewards, power, challenge, and advancement','Favourable working conditions and freedom from control'],
-    strengths:['Influential','Assertive','Friendly','Decisive','Confident','Self-starting','Persuasive','Driving','Mobile','Alert','Independent','Persistent'],
-    characteristics:['Positive, optimistic, enthusiastic','Influential, persuasive, verbal communicator','Competitive, assertive, self-starter','Results-oriented and receptive to change','Quick-paced decision maker who motivates others'],
-    orgValue:['Build relationships and generate enthusiasm','Drive results and take initiative','Open doors and develop networks','Accept challenges and question the status quo','Offer fresh perspectives and innovative solutions'],
-    underPressure:'Emphasizes people skills — positive, persuasive, and communicative. Relies on interpersonal strengths to manage stress.',
-    mask:'Slight behavioural moderation to appear more thorough and organized, though restlessness remains.',
-  },
-},{
-  id:2, name:'Mrs. XXX Sample', title:'Senior Operations Director',
-  loc:'London, UK', initials:'XXX', color:'#0891b2', exp:15,
-  cis:78, successPct:71, hiringRisk:'Low',
-  riskReasons:['Excessive Risk Approach (84) may lead to impulsive strategic decisions','Curiosity at Moderate (44) — may resist significant innovation initiatives'],
-  scores:[
-    {k:'fit',      l:'Role Fit',      v:75, d:'Skills match, industry relevance & experience alignment',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'15 yrs Ops leadership · Director-level confirmed at 3 FTSE-listed organisations'},
-        {name:'Medium',        color:'#000000', note:'7 articles on lean operations & supply chain resilience — avg 1.8K reads, shared in ops communities'},
-        {name:'Meetup',        color:'#ed1c40', note:'Regular attendee at London Ops Leaders & Supply Chain Innovation groups — 9 events in 12 months'},
-        {name:'HPTI',          color:'#0891b2', note:'Conscientiousness 74 (Optimal) — directly maps to structured operational leadership demands'},
-      ]},
-    {k:'impact',   l:'Impact',        v:71, d:'Revenue impact, team scale & project complexity signals',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Led teams of 50–200 · P&L accountability confirmed in 2 consecutive Director roles'},
-        {name:'GitHub',        color:'#24292f', note:'14 repos: ops automation, inventory scripts, dashboard tooling · 112 stars · 3 forks by enterprise teams'},
-        {name:'Reddit',        color:'#ff4500', note:'r/supplychain: 290 upvoted answers on process optimisation — cited in 2 community wikis'},
-        {name:'HPTI',          color:'#0891b2', note:'Risk Approach 84 (Excessive) — bold, proactive impact driver; caution on impulsive decisions'},
-      ]},
-    {k:'traj',     l:'Trajectory',    v:79, d:'Promotion velocity & career progression pattern',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Steady: Analyst → Manager → Director in 10 years · no lateral moves or unexplained gaps'},
-        {name:'Coursera',      color:'#0056d2', note:'8 verified certificates: Lean Six Sigma, Operations Management, Data-Driven Leadership (2019–2024)'},
-        {name:'HPTI',          color:'#0891b2', note:'Competitiveness 52 (Moderate) — collaborative ascent, not politically or ego-driven'},
-      ]},
-    {k:'stability',l:'Stability',     v:82, d:'Retention predictor — avg tenure & role-switching pattern',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Average tenure 3.4 yrs — well above sector median · zero unexplained gaps in 15 yrs'},
-        {name:'Reddit',        color:'#ff4500', note:'Consistent professional tone across 5-yr posting history · no job-seeking signals detected'},
-        {name:'HPTI',          color:'#0891b2', note:'Adjustment 66 (Optimal) — strong resilience under stress significantly reduces attrition risk'},
-      ]},
-    {k:'skill',    l:'Skill Depth',   v:68, d:'Depth vs breadth of stated competencies',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Ops, supply chain, process improvement — deep expertise confirmed, narrower cross-domain breadth'},
-        {name:'GitHub',        color:'#24292f', note:'Python & SQL repos for warehouse management & KPI dashboards — active commits since 2020'},
-        {name:'Stack Overflow',color:'#f48024', note:'Reputation 2,210 · 41 accepted answers on SQL optimisation and logistics data pipelines'},
-        {name:'Coursera',      color:'#0056d2', note:'Completed Advanced Excel, Python for Data Analysis, and SAP Basics — all with distinction'},
-        {name:'HPTI',          color:'#0891b2', note:'Curiosity 44 (Moderate) — deep in core domain but limited appetite for cross-domain exploration'},
-      ]},
-    {k:'culture',  l:'Culture Fit',   v:74, d:'Behavioural & communication style alignment',
-      sources:[
-        {name:'LinkedIn',      color:'#0077b5', note:'Recommendations highlight collaborative style and stakeholder empathy across 4 organisations'},
-        {name:'Medium',        color:'#000000', note:'Writing tone consistently values team attribution — "we achieved" over "I delivered"'},
-        {name:'Reddit',        color:'#ff4500', note:'Constructive and measured across 180+ community replies — high psychological safety signals'},
-        {name:'HPTI',          color:'#0891b2', note:'Competitiveness 52 & Adjustment 66 — calm, team-oriented, non-political leadership style'},
-      ]},
-  ],
-  copilot:{
-    strengths:['Optimal Conscientiousness (74) — highly organized, goal-driven, strong follow-through','Optimal Adjustment (66) — calm under pressure, resilient leadership under stress','High Stability score (82) — low attrition risk, long-term retention likely','Collaborative by nature — fosters team dynamics over personal recognition'],
-    concerns:['Excessive Risk Approach (84) — bold but may overlook consequences of impulsive decisions','Moderate Curiosity (44) — prefers proven methods; may resist bold innovation roadmaps','Moderate Ambiguity Acceptance (55) — needs structural clarity in ambiguous scaling phases'],
-    rec:'Proceed to Interview',
-    recColor:'#059669',
-    recBg:'#ecfdf5',
-    recDetail:'Strong operational leadership candidate. Pair with structured decision frameworks to channel bold risk appetite into strategic rather than reactive moves.',
-  },
-  assessments:['hpti'],
-  hptiSourceInfo:{instrument:'HPTI — High Performance Traits Inventory',provider:'Thomas International',administered:'February 2024',items:'6-trait personality inventory · 78 self-report items',norm:'Validated for senior leadership prediction across 12 industries'},
-  hpti:[
-    {l:'Conscientiousness',v:74,zone:'Optimal',  color:'#ec4899',impl:'Highly organized & driven — watch for perfectionism',         develop:'Balance perfectionism with practicality; delegate and define "fit-for-purpose" standards.'},
-    {l:'Adjustment',       v:66,zone:'Optimal',  color:'#0ea5e9',impl:'Calm under pressure — may appear emotionally detached',       develop:'Empathize with stressed colleagues; your calmness may be misread as detachment.'},
-    {l:'Curiosity',        v:44,zone:'Moderate', color:'#10b981',impl:'Balanced innovator — prefers stability over radical change',   develop:'Encourage innovation by requesting evidence-based proposals from your team.'},
-    {l:'Risk Approach',    v:84,zone:'Excessive',color:'#f59e0b',impl:'Bold & proactive — may overlook consequences',                develop:'Channel risk-taking into strategic opportunities; avoid impulsive decisions.'},
-    {l:'Ambiguity Accept.',v:55,zone:'Moderate', color:'#8b5cf6',impl:'Handles complexity with discomfort — needs clear structure',  develop:'Clarify ambiguity proactively; bridge structured and flexible thinkers.'},
-    {l:'Competitiveness',  v:52,zone:'Moderate', color:'#6366f1',impl:'Collaborative — not driven by power or recognition',          develop:'Foster team dynamics; praise others and support diverse motivations.'},
-  ],
-}];
-
-/* ── small helpers ── */
-function Icon({d,size=20,color='currentColor'}){
-  return <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={d}/></svg>;
-}
-const ICONS = {
-  home:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-  users:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-  chart:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-  cog:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
-  back:'M15 19l-7-7 7-7',
-  next:'M9 5l7 7-7 7',
-  pin:'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z',
-  brief:'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
-  bolt:'M13 10V3L4 14h7v7l9-11h-7z',
-  check:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-  warn:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
-  chat:'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
-  search:'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
-  plus:'M12 4v16m8-8H4',
+const{useState}=React;
+const sc=v=>v>=85?{hex:'#10b981',label:'Excellent',bg:'#ecfdf5',tc:'#065f46'}:v>=70?{hex:'#4f46e5',label:'Strong',bg:'#eef2ff',tc:'#3730a3'}:v>=55?{hex:'#f59e0b',label:'Good',bg:'#fffbeb',tc:'#92400e'}:{hex:'#ef4444',label:'Developing',bg:'#fef2f2',tc:'#991b1b'};
+const zoneStyle=z=>({Optimal:{bg:'#dcfce7',tc:'#166534',hex:'#16a34a'},Moderate:{bg:'#fef9c3',tc:'#854d0e',hex:'#ca8a04'},Excessive:{bg:'#fae8ff',tc:'#6b21a8',hex:'#9333ea'},Low:{bg:'#fee2e2',tc:'#991b1b',hex:'#dc2626'}}[z]||{bg:'#f1f5f9',tc:'#475569',hex:'#64748b'});
+const S={
+gh:n=>({name:'GitHub',color:'#24292f',note:n}),li:n=>({name:'LinkedIn',color:'#0077b5',note:n}),so:n=>({name:'Stack Overflow',color:'#f48024',note:n}),
+me:n=>({name:'Medium',color:'#292929',note:n}),rd:n=>({name:'Reddit',color:'#ff4500',note:n}),mt:n=>({name:'Meetup',color:'#ed1c40',note:n}),
+cr:n=>({name:'Coursera',color:'#0056d2',note:n}),tw:n=>({name:'Twitter/X',color:'#1da1f2',note:n}),yt:n=>({name:'YouTube',color:'#ff0000',note:n}),
+be:n=>({name:'Behance',color:'#1769ff',note:n}),dr:n=>({name:'Dribbble',color:'#ea4c89',note:n}),kg:n=>({name:'Kaggle',color:'#20beff',note:n}),
+rg:n=>({name:'ResearchGate',color:'#00aadc',note:n}),hr:n=>({name:'HackerRank',color:'#00ea64',note:n}),lc:n=>({name:'LeetCode',color:'#ffa116',note:n}),
+hs:n=>({name:'HubSpot Academy',color:'#ff7a59',note:n}),sf:n=>({name:'Salesforce Trailhead',color:'#00a1e0',note:n}),ph:n=>({name:'ProductHunt',color:'#da552f',note:n}),
+ga:n=>({name:'Google Certs',color:'#4285f4',note:n}),
+tq:n=>({name:'TEIQue',color:'#4f46e5',note:n}),pp:n=>({name:'PPA',color:'#ec4899',note:n}),hp:n=>({name:'HPTI',color:'#0891b2',note:n}),
 };
 
-/* ── Data Provenance Box ── */
-function DataProvenanceBox({sources}){
-  return (
-    <div style={{marginTop:10,paddingTop:10,borderTop:'1px dashed #e2e8f0'}}>
-      <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:7}}>
-        <span style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em'}}>Data Provenance</span>
-        <span style={{fontSize:9,fontWeight:700,padding:'1px 7px',borderRadius:10,background:'#dcfce7',color:'#166534',border:'1px solid #bbf7d0'}}>No Resume</span>
-      </div>
-      {sources.map(s=>(
-        <div key={s.name} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:6}}>
-          <span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:4,flexShrink:0,marginTop:1,
-            background:s.color+'18',color:s.color,border:`1px solid ${s.color}35`}}>{s.name}</span>
-          <span style={{fontSize:11,color:'#64748b',lineHeight:1.45}}>{s.note}</span>
-        </div>
-      ))}
+const CANDIDATES=[
+{id:1,name:'Priya Sharma',title:'Senior Data Scientist',loc:'Bangalore, India',initials:'PS',color:'#7c3aed',exp:8,industry:'Technology',
+skills:['Python','Machine Learning','TensorFlow','SQL','Statistics','Data Visualization'],
+cis:88,successPct:81,hiringRisk:'Low',riskReasons:['Low assertiveness (TEIQue 59) may limit cross-team influence','Perfectionism linked to delivery delays on 2 of last 4 projects'],
+scores:[
+{k:'fit',l:'Role Fit',v:87,d:'Technical skills match & domain relevance',sources:[S.kg('Kaggle Grandmaster — top 0.1% globally · 14 gold medals · specialises in NLP and tabular data'),S.gh('234 repos · 1.8K stars · Python 72%, SQL 15% · 890 commits in last 12 months'),S.me('14 ML articles · avg 4.1K reads · 3 cited in academic papers on applied deep learning'),S.tq('Sociability 71 & Self-Motivation 96 — strong drive but watch team integration')]},
+{k:'impact',l:'Impact',v:82,d:'Measurable project outcomes & contribution',sources:[S.gh('Top contributor on 3 open-source ML libraries · 4.2K+ combined stars · code adopted by 2 Fortune 500'),S.kg('Solutions deployed in production at Flipkart (reco engine) and Swiggy (demand forecasting)'),S.so('4,200 rep · 89 accepted answers in [python] [machine-learning] [tensorflow]'),S.rd('r/MachineLearning: 320+ upvotes · 2 posts in subreddit "Best of" compilation')]},
+{k:'traj',l:'Trajectory',v:85,d:'Career progression & learning velocity',sources:[S.cr('7 certs: Deep Learning, MLOps, AWS ML Specialty, Stanford ML — all 2021–2024'),S.gh('Commit cadence up 40% YoY · migrated from notebooks to production pipelines — maturity arc'),S.me('Writing evolved from tutorials (2020) to research commentary (2024) — intellectual growth')]},
+{k:'stability',l:'Stability',v:79,d:'Retention predictor from behavioural signals',sources:[S.li('3 roles in 8 yrs · avg tenure 2.7 yrs — at sector median · current role 2.4 yrs'),S.gh('Consistent commits across all roles — no gaps > 2 weeks over 5 years'),S.tq('Impulse Control 89 & Stress Management 91 — resilience supports retention')]},
+{k:'skill',l:'Skill Depth',v:91,d:'Technical depth validated across platforms',sources:[S.kg('Grandmaster validates elite ML · spans NLP, CV, tabular, time-series'),S.so('Top 3% in [tensorflow] — deep internals knowledge, not just API usage'),S.lc('Knight rank (top 2%) · 480+ problems · strong DP and graph algorithms'),S.gh('Custom transformers, distributed training, MLOps CI/CD templates')]},
+{k:'culture',l:'Culture Fit',v:83,d:'Behavioural alignment & collaboration',sources:[S.tq('Wellbeing 92 & Emotionality 96 — empathetic; may over-invest in dynamics'),S.rd('Constructive tone, patient with beginners, shares credit — 0 toxicity flags'),S.mt('Bangalore ML community · 6 talks · mentors 3 junior data scientists'),S.pp('Analyst (C-type) — systematic, quality-driven, prefers structured environments')]},
+],
+copilot:{strengths:['Kaggle Grandmaster (top 0.1%) — world-class applied ML validated','GitHub 1.8K stars + Fortune 500 adoption — proven real-world impact','TEIQue Self-Motivation 96 & Stress Management 91 — exceptional resilience','7 Coursera certs + LeetCode Knight — continuous multi-platform learning'],
+redFlags:['Low Assertiveness (TEIQue 59) — ideas get overridden in group settings','Perfectionism: 2 of 4 projects shipped late due to over-optimisation','Sociability 71 — perceived as cold by non-technical stakeholders','Stack Overflow comments show impatience with imprecise questions'],
+rec:'Proceed to Interview',recColor:'#059669',recBg:'#ecfdf5',recDetail:'Exceptional technical talent. Pair with strong PM for scope management. Structured 1:1s to draw out ideas she may not volunteer.'},
+assessments:['teique','ppa'],
+teique:{sourceInfo:{instrument:'TEIQue — Trait Emotional Intelligence Questionnaire',provider:'Thomas International',administered:'Mar 2024',items:'153-item validated psychometric questionnaire',norm:'Norm-referenced against 13,000+ global professionals'},
+overall:94,factors:[{l:'Wellbeing',v:92,color:'#10b981'},{l:'Emotionality',v:96,color:'#4f46e5'},{l:'Self-Control',v:88,color:'#0ea5e9'},{l:'Sociability',v:71,color:'#f59e0b'}],
+groups:[{g:'Wellbeing',items:[{l:'Happiness',v:96},{l:'Optimism',v:87},{l:'Self-Esteem',v:94}]},{g:'Emotionality',items:[{l:'Emotion Expression',v:94},{l:'Emotion Perception',v:95},{l:'Empathy',v:98},{l:'Relationships',v:97}]},{g:'Self-Control',items:[{l:'Emotion Regulation',v:82},{l:'Impulse Control',v:89},{l:'Stress Management',v:91}]},{g:'Sociability',items:[{l:'Social Awareness',v:88},{l:'Assertiveness',v:59},{l:'Emotion Management',v:66}]}],
+global:[{l:'Self-Motivation',v:96},{l:'Adaptability',v:78}],
+roleFit:['Senior ML / AI team lead','Cross-functional data product roles','Technical research leadership','Platform / infrastructure ML'],
+dev:[{area:'Assertiveness',v:59,action:'Practice "I + impact" feedback in 3 low-risk meetings/week. Join facilitation workshop.'},{area:'Emotion Management',v:66,action:'3-step de-escalation framework. Weekly mentor debrief on triggers.'},{area:'Adaptability',v:78,action:'1 cross-functional stretch project per quarter outside ML.'}]},
+ppa:{sourceInfo:{instrument:'PPA — Personal Profile Analysis',provider:'Thomas International',administered:'Mar 2024',items:'24 forced-choice word groups · DISC-based',norm:'Validated against 33 million profiles worldwide'},
+style:'Analyst (C-type)',selfImage:'Detail-oriented, systematic, quality-driven. Prefers precision over speed. Works best with clear standards and autonomy. May struggle with ambiguity or conflict.',
+motivators:['Precision and correctness','Autonomy and intellectual freedom','Recognition for expertise','Stable, structured environments'],
+strengths:['Analytical','Precise','Systematic','Quality-focused','Independent','Thorough','Methodical','Patient','Rigorous','Detail-oriented','Standards-conscious','Data-driven'],
+characteristics:['Methodical, detail-focused problem solver','Quality over speed','Reserved, data-driven communicator','Strong independent output','Risk-averse and standards-conscious'],
+orgValue:['Ensures rigour and quality','Identifies risks early','Deep technical expertise drives innovation','Holds bar high on accuracy'],
+underPressure:'Withdraws and over-analyses. May become paralysed by detail or defensive when quality is questioned.',
+mask:'Moderate — slightly more sociable in team settings than natural preference.'},
+},
+
+{id:2,name:'Marcus Thompson',title:'VP of Sales',loc:'New York, USA',initials:'MT',color:'#059669',exp:14,industry:'Sales',
+skills:['B2B Sales','Salesforce','Negotiation','SaaS','Account Management','Revenue Growth'],
+cis:82,successPct:74,hiringRisk:'Medium',riskReasons:['Competitiveness 82 Excessive — ego-driven','Avg tenure 1.6 yrs — high flight risk'],
+scores:[
+{k:'fit',l:'Role Fit',v:83,d:'Sales leadership & domain match',sources:[S.sf('5 Salesforce superbadges: Sales Cloud, Service Cloud, Einstein Analytics — verified CRM mastery'),S.rd('r/sales: 480 upvoted answers on SaaS deal strategy and enterprise cycles — high peer trust'),S.me('8 BD articles · avg 3.6K reads · "Scaling SaaS in Enterprise" shared 200+ times'),S.mt('Organiser of NYC SaaS Sales meetup · 340 members · monthly events since 2022')]},
+{k:'impact',l:'Impact',v:79,d:'Revenue outcomes & team performance',sources:[S.li('VP at 2 SaaS cos · $18M pipeline · 140% quota 3 consecutive years'),S.rd('r/startups: GTM teardowns with real revenue numbers — P&L fluency'),S.hs('Inbound Sales, Revenue Ops, Sales Enablement — 3 HubSpot certificates')]},
+{k:'traj',l:'Trajectory',v:81,d:'Career progression & skill growth',sources:[S.cr('Strategic Selling (Northwestern), SaaS Metrics (Wharton) — exec education'),S.me('Writing shifted from cold-calling tips (2019) to revenue strategy (2024)'),S.sf('Admin → Advanced Admin → Einstein Analytics in 18 months')]},
+{k:'stability',l:'Stability',v:67,d:'Retention risk from patterns',sources:[S.li('5 roles in 14 yrs · avg 1.6 yrs · 2 sub-1-year stints'),S.rd('r/sales: recurring "looking for next challenge" language every 12-18 months'),S.hp('Competitiveness 82 Excessive — may leave if not promoted fast enough')]},
+{k:'skill',l:'Skill Depth',v:77,d:'Sales methodology & tool depth',sources:[S.sf('5 superbadges — deeper CRM expertise than most VP-level leaders'),S.hs('3 certs across inbound, RevOps, enablement — multi-platform fluency'),S.me('Genuine depth on MEDDIC, Challenger Sale, and PLG — not surface')]},
+{k:'culture',l:'Culture Fit',v:74,d:'Collaboration & team dynamics',sources:[S.rd('Direct, confident — but 3 dismissive-tone instances toward juniors flagged'),S.mt('Organiser but feedback notes "dominating" speaking style in events'),S.hp('Adjustment 58 Moderate — may snap under prolonged uncertainty')]},
+],
+copilot:{strengths:['140% quota 3 consecutive years — top-decile sales performance','5 Salesforce superbadges — deeper CRM than most VP-level leaders','NYC SaaS meetup organiser (340 members) — strong network signal','HPTI Curiosity 71 Optimal + Risk Approach 79 Optimal — ideal for growth roles'],
+redFlags:['Competitiveness 82 Excessive — team reports "credit-taking" in references','Avg tenure 1.6 yrs with 2 sub-1-year stints — significant flight risk','Reddit r/sales: dismissive tone toward junior reps — management concern','Adjustment 58 Moderate — reacts poorly to ambiguity and shifting strategy'],
+rec:'Proceed with Caution',recColor:'#d97706',recBg:'#fffbeb',recDetail:'Strong revenue driver but retention and team dynamics are real risks. Structure first 90 days with clear targets and 360° feedback at month 3.'},
+assessments:['hpti'],
+hptiSourceInfo:{instrument:'HPTI — High Performance Traits Inventory',provider:'Thomas International',administered:'Feb 2024',items:'6-trait personality inventory · 78 self-report items',norm:'Validated for senior leadership across 12 industries'},
+hpti:[
+{l:'Conscientiousness',v:61,zone:'Moderate',color:'#ec4899',impl:'Goal-oriented but deprioritises process',develop:'Build structured weekly planning to balance drive with discipline.'},
+{l:'Adjustment',v:58,zone:'Moderate',color:'#0ea5e9',impl:'Steady usually; stress surfaces under prolonged pressure',develop:'Name emotional states before reacting in high-stakes moments.'},
+{l:'Curiosity',v:71,zone:'Optimal',color:'#10b981',impl:'Actively seeks new approaches and markets',develop:'Channel curiosity — avoid shiny-object syndrome.'},
+{l:'Risk Approach',v:79,zone:'Optimal',color:'#f59e0b',impl:'Calculated risk-taker — good for growth roles',develop:'Pair bold instincts with data review before major pivots.'},
+{l:'Ambiguity Accept.',v:68,zone:'Optimal',color:'#8b5cf6',impl:'Comfortable with evolving targets',develop:'Coach structured team members through ambiguous phases.'},
+{l:'Competitiveness',v:82,zone:'Excessive',color:'#6366f1',impl:'Win-at-all-costs may undermine collaboration',develop:'Reframe success as team metrics, not individual leaderboard.'},
+],
+},
+
+{id:3,name:'Elena Kovacs',title:'Head of Product',loc:'Berlin, Germany',initials:'EK',color:'#db2777',exp:10,industry:'Product',
+skills:['Product Strategy','Roadmapping','Agile','UX Research','OKRs','Analytics'],
+cis:79,successPct:72,hiringRisk:'Low',riskReasons:['Perfectionism leads to missed ship dates','Limited technical depth limits eng credibility'],
+scores:[
+{k:'fit',l:'Role Fit',v:81,d:'Product leadership & domain signals',sources:[S.ph('3 products shipped on ProductHunt · 2 top-5 of the day — end-to-end product sense'),S.me('9 product strategy articles · avg 3.8K reads · "OKRs That Work" shared 400+ times'),S.mt('Berlin Product community organiser · 280 members · monthly product teardowns'),S.rd('r/ProductManagement: 310 upvoted answers on roadmapping and prioritisation')]},
+{k:'impact',l:'Impact',v:76,d:'Product outcomes & team effectiveness',sources:[S.ph('12K+ combined upvotes on launched products — strong market validation'),S.gh('23 repos: analytics dashboards, OKR tools, A/B test frameworks — hands-on builder'),S.me('Case studies cite 34% activation improvement and 2.1x retention lift')]},
+{k:'traj',l:'Trajectory',v:78,d:'Career progression & skill evolution',sources:[S.cr('Reforge Growth Series, Pragmatic Institute PMC-III, Google Analytics certified'),S.me('Writing arc: specs (2020) → strategy frameworks (2024) — clear growth'),S.li('PM → Senior PM → Head of Product in 6 years · promoted ahead of cycle')]},
+{k:'stability',l:'Stability',v:83,d:'Retention & commitment patterns',sources:[S.gh('4+ yr consistent commit history on product tooling — sustained engagement'),S.mt('Organising same group for 3 years — commitment and consistency signal'),S.li('Current role 3.2 yrs · avg 2.8 yrs — above sector median')]},
+{k:'skill',l:'Skill Depth',v:74,d:'Product craft depth',sources:[S.ph('Shipped B2B SaaS, marketplace, dev tools — breadth validated, depth varies'),S.gh('Analytics repos show SQL + Python but no complex engineering — PM-level depth'),S.cr('3 certs but product-specific only — no cross-domain technical credentials')]},
+{k:'culture',l:'Culture Fit',v:80,d:'Team dynamics & collaboration',sources:[S.rd('Constructive, well-reasoned · helps junior PMs — supportive presence'),S.mt('Feedback: "inclusive, structured, makes everyone heard" — strong facilitation'),S.me('Collaborative writing tone — "we discovered" not self-aggrandising')]},
+],
+copilot:{strengths:['3 ProductHunt top-5 launches — proven ability to ship and find market fit','Berlin Product community organiser 3 years — ecosystem builder and mentor','Writing trajectory shows genuine growth into senior strategic thinking','Stakeholder management praised across Reddit, Meetup, and Medium'],
+redFlags:['Perfectionism: 2-3 month delays on 2 of 3 ProductHunt launches','Limited technical depth — PM-level SQL/Python only; loses credibility with senior engineers','Medium OKR articles sparked debate — strong opinions create executive friction','Overscoping visible in GitHub product specs — weak MVP discipline'],
+rec:'Proceed to Interview',recColor:'#059669',recBg:'#ecfdf5',recDetail:'Strong product leader with market instincts. Pair with disciplined engineering lead. Probe delivery discipline in interview.'},
+assessments:['teique'],assessmentSummary:'TEIQue: Wellbeing 85, Emotionality 88 — empathetic product leader. Self-Control 72 — scope creep under pressure. Assertiveness 62 limits pushback on exec requests. Self-Motivation 84.'},
+
+{id:4,name:'James Okonkwo',title:'Chief Financial Officer',loc:'Lagos, Nigeria',initials:'JO',color:'#b45309',exp:18,industry:'Finance',
+skills:['Financial Planning','Risk Management','M&A','IFRS','Fundraising','Team Leadership'],
+cis:85,successPct:78,hiringRisk:'Low',riskReasons:['Conservative risk appetite — slow on bold moves','Limited fintech exposure'],
+scores:[
+{k:'fit',l:'Role Fit',v:86,d:'Finance leadership depth',sources:[S.rg('3 papers on African capital markets — cited 28 times in peer-reviewed journals'),S.cr('CFA Level II, ACCA qualified, Financial Modelling Specialisation — elite credentials'),S.me('6 articles on emerging market finance · "M&A in Sub-Saharan Africa" featured in CFO Magazine'),S.mt('Lagos CFO Network co-founder · 180 members · quarterly roundtables')]},
+{k:'impact',l:'Impact',v:84,d:'Financial leadership outcomes',sources:[S.li('CFO at 2 companies · led $45M Series C · managed team of 22'),S.rg('Capital allocation research adopted as framework by 2 PE firms'),S.me('Post-merger integration case study cited $8M cost savings')]},
+{k:'traj',l:'Trajectory',v:83,d:'Career progression',sources:[S.cr('CFA + ACCA + 4 Coursera specialisations — elite credential density'),S.rg('Publication cadence increasing: 1/yr → 2/yr — thought leadership growth'),S.li('Analyst → FP&A Manager → VP Finance → CFO in 15 years')]},
+{k:'stability',l:'Stability',v:88,d:'Retention strength',sources:[S.mt('CFO Network co-founder 4 yrs — deep community roots signal low flight risk'),S.li('Avg tenure 4.5 yrs — well above median · zero gaps across 18 years'),S.rd('r/investing: consistent contributor 3+ yrs — no job-seeking language')]},
+{k:'skill',l:'Skill Depth',v:81,d:'Finance domain depth',sources:[S.rg('Published on IFRS, capital allocation, post-merger integration — validated'),S.cr('CFA II + ACCA + Financial Modelling — deep technical grounding'),S.gh('Financial model templates · 340 stars · used by 50+ analysts'),S.me('Fluency across M&A, fundraising, FP&A, treasury — true generalist CFO')]},
+{k:'culture',l:'Culture Fit',v:79,d:'Leadership style & collaboration',sources:[S.mt('Mentors 5 junior professionals through CFO Network — developmental leader'),S.rd('r/investing: measured, respectful tone — projects gravitas'),S.me('Consultative writing style — low ego, high substance')]},
+],
+copilot:{strengths:['Led $45M Series C — proven institutional fundraising capability','3 published papers cited 28 times — rare thought leadership for practising CFO','CFA II + ACCA + 4 specialisations — elite credential density','Avg tenure 4.5 yrs + community founder — strong retention signal'],
+redFlags:['Conservative risk appetite — explicitly cautions against crypto/DeFi in articles','Limited fintech/digital finance exposure — struggles in tech-forward CFO roles','Strong hierarchy preference — "respect the chain" language conflicts with flat orgs','ResearchGate papers focus exclusively on African markets — limited global exposure'],
+rec:'Proceed to Interview',recColor:'#059669',recBg:'#ecfdf5',recDetail:'Exceptional finance leader for traditional or emerging-market roles. Probe fintech comfort and flat-org adaptability.'},
+assessments:['hpti','ppa'],assessmentSummary:'HPTI: Conscientiousness 78 Optimal, Adjustment 72 Optimal — calm, organised. Risk Approach 42 Moderate — conservative. PPA: Compliance (S/C-type) — steady, methodical, values stability.'},
+
+{id:5,name:'Aisha Al-Rashid',title:'Marketing Director',loc:'Dubai, UAE',initials:'AA',color:'#0891b2',exp:11,industry:'Marketing',
+skills:['Digital Marketing','Brand Strategy','SEO','Content Marketing','Google Analytics','Paid Media'],
+cis:77,successPct:69,hiringRisk:'Medium',riskReasons:['Team conflict history from reference checks','Micro-management pattern in recommendations'],
+scores:[
+{k:'fit',l:'Role Fit',v:79,d:'Marketing leadership & channel expertise',sources:[S.ga('Google Analytics + Ads Search/Display/Video certified — full digital stack'),S.hs('Inbound Marketing, Content Marketing, Email, SEO — 4 HubSpot certs'),S.tw('12K followers · avg 340 engagements per strategy post — thought leader'),S.yt('8K subscribers · 45 marketing tutorials · 280K total views')]},
+{k:'impact',l:'Impact',v:74,d:'Campaign outcomes & influence',sources:[S.me('6 articles · "SEO in MENA" got 7.2K reads · cited by 2 regional agencies'),S.tw('Brand repositioning thread went viral — 2.4K retweets, 890 bookmarks'),S.yt('GA4 setup tutorial has 42K views — scales knowledge beyond team')]},
+{k:'traj',l:'Trajectory',v:76,d:'Growth & development pace',sources:[S.cr('Digital Marketing (Illinois), Marketing Analytics (Virginia) — 2 university certs'),S.ga('Analytics → Ads → Video certification progression in 12 months'),S.tw('2K to 12K followers in 18 months — accelerating thought leadership')]},
+{k:'stability',l:'Stability',v:72,d:'Retention & engagement consistency',sources:[S.li('4 roles in 11 yrs · avg 2.3 yrs — slightly below director median'),S.tw('Posting cadence inconsistent: bursts then 2-3 month gaps — engagement risk'),S.tq('Emotion Management 64 — may disengage during political cycles')]},
+{k:'skill',l:'Skill Depth',v:78,d:'Marketing craft depth',sources:[S.ga('Full Google stack — rare for director-level to maintain hands-on certs'),S.hs('4 certs spanning inbound, content, email, SEO — broad automation fluency'),S.yt('Tutorial quality shows GA4, Tag Manager, attribution depth'),S.me('Articles demonstrate full-funnel SEO + content + paid integration')]},
+{k:'culture',l:'Culture Fit',v:69,d:'Team dynamics & alignment',sources:[S.rd('r/marketing: 3 territorial posts when others suggested alternatives'),S.tw('Confrontational tone in quote tweets — public disagreement pattern'),S.tq('Emotionality 87 but Sociability 66 — feels deeply, expresses poorly')]},
+],
+copilot:{strengths:['Full Google + HubSpot cert stack — rare hands-on depth at director level','YouTube 280K views — scales knowledge beyond direct team','Twitter/X 12K engaged followers — strong industry visibility','Medium article cited by 2 agencies — validated MENA market reputation'],
+redFlags:['Reddit r/marketing: 3 dismissive responses to peers — territorial behaviour','Twitter/X confrontational quote tweets — brand safety risk if unchecked','Reference checks: micro-management — "controlling" work allocation reported','TEIQue Sociability 66 + Emotionality 87 — volatile under team conflict'],
+rec:'Proceed with Caution',recColor:'#d97706',recBg:'#fffbeb',recDetail:'Strong technical marketer. Significant interpersonal risk. Require team feedback at 30/60/90 days. Pair with collaborative COO.'},
+assessments:['teique'],assessmentSummary:'TEIQue: Emotionality 87 — empathetic with customers, volatile with team. Self-Control 68 — reactive outbursts under pressure. Wellbeing 79. Assertiveness 76 but channels aggressively.'},
+
+{id:6,name:'David Chen',title:'Senior Software Engineer',loc:'San Francisco, USA',initials:'DC',color:'#1d4ed8',exp:9,industry:'Engineering',
+skills:['Java','Python','Kubernetes','AWS','System Design','Go','Distributed Systems'],
+cis:91,successPct:84,hiringRisk:'Low',riskReasons:['4 jobs in 9 yrs — restlessness pattern','Low sociability limits cross-team effectiveness'],
+scores:[
+{k:'fit',l:'Role Fit',v:93,d:'Engineering skills & technical validation',sources:[S.gh('642 repos · 3.2K stars · top 1% globally · Go 38%, Python 32%, Java 20% · 1.4K commits/yr'),S.so('12,400 rep · gold badge [kubernetes] · 234 accepted answers — top 0.5%'),S.lc('Knight rank (top 2%) · 680+ problems · 98th percentile system design'),S.hr('Expert: Algorithms, Data Structures, Distributed Systems — 3 gold badges')]},
+{k:'impact',l:'Impact',v:88,d:'Engineering outcomes & influence',sources:[S.gh('Kubernetes autoscaler plugin — 1.8K stars · adopted by 3 FAANG in production'),S.so('Tag wiki editor [kubernetes] [distributed-systems] — shapes knowledge for 50K+/month'),S.me('22 technical articles · avg 6.8K reads · "Designing for 10x Scale" bookmarked 1.2K times'),S.rd('r/golang r/kubernetes: 890 upvotes · cited in 4 conference talks')]},
+{k:'traj',l:'Trajectory',v:90,d:'Technical growth & leadership signals',sources:[S.gh('CRUD apps (2016) → distributed systems (2020) → infra tools (2024) — elite progression'),S.cr('AWS Solutions Architect Pro + CKA — both with distinction'),S.me('Tutorials → architecture deep-dives → industry commentary — thought leader')]},
+{k:'stability',l:'Stability',v:71,d:'Retention risk from patterns',sources:[S.li('4 roles in 9 yrs · avg 2.1 yrs — below senior SWE median of 2.8'),S.gh('"Ramp, plateau, disengage" cycle visible at ~20 month mark across repos'),S.rd('r/cscareerquestions: 2 "when to move on" posts — active market awareness')]},
+{k:'skill',l:'Skill Depth',v:95,d:'Technical mastery across platforms',sources:[S.gh('3.2K stars Go/Python/Java — rare polyglot depth confirmed by adoption'),S.so('12.4K rep — deep systems internals, not framework surface'),S.lc('Knight + 680 problems — algorithmic foundation beyond practical eng'),S.hr('Expert across 3 domains — consistent foundational CS mastery')]},
+{k:'culture',l:'Culture Fit',v:67,d:'Collaboration & interpersonal signals',sources:[S.rd('Technically precise but blunt · 4 dismissive responses to beginners'),S.so('Correct but curt answers — rarely includes context or encouragement'),S.tq('Sociability 62 — low warmth; strong task focus, weak connection'),S.gh('Solo contributor on 95% of repos — minimal collaboration signals')]},
+],
+copilot:{strengths:['GitHub 3.2K stars, top 1% — elite open-source with community validation','K8s autoscaler adopted by FAANG — code at massive production scale','LeetCode Knight + HackerRank Expert + SO 12.4K — triple-validated mastery','AWS SA Pro + CKA with distinction — infra expertise beyond app code'],
+redFlags:['Culture Fit 67 — Sociability 62 limits cross-team relationship building','4 jobs / 9 yrs with "ramp, plateau, disengage" pattern in GitHub commits','SO and Reddit tone blunt/dismissive — 4+ flagged; mentoring risk for juniors','95% solo GitHub contributor — minimal pairing or collaborative development'],
+rec:'Proceed to Interview',recColor:'#059669',recBg:'#ecfdf5',recDetail:'Exceptional IC — potential Staff+. Assign collaborative tech lead to bridge gaps. Probe mentoring willingness in interview.'},
+assessments:['teique','ppa'],
+teique:{sourceInfo:{instrument:'TEIQue — Trait Emotional Intelligence Questionnaire',provider:'Thomas International',administered:'Jan 2024',items:'153-item validated psychometric questionnaire',norm:'Norm-referenced against 13,000+ global professionals'},
+overall:76,factors:[{l:'Wellbeing',v:81,color:'#10b981'},{l:'Emotionality',v:69,color:'#4f46e5'},{l:'Self-Control',v:86,color:'#0ea5e9'},{l:'Sociability',v:62,color:'#f59e0b'}],
+groups:[{g:'Wellbeing',items:[{l:'Happiness',v:78},{l:'Optimism',v:82},{l:'Self-Esteem',v:84}]},{g:'Emotionality',items:[{l:'Emotion Expression',v:58},{l:'Emotion Perception',v:72},{l:'Empathy',v:65},{l:'Relationships',v:81}]},{g:'Self-Control',items:[{l:'Emotion Regulation',v:88},{l:'Impulse Control',v:84},{l:'Stress Management',v:86}]},{g:'Sociability',items:[{l:'Social Awareness',v:74},{l:'Assertiveness',v:71},{l:'Emotion Management',v:42}]}],
+global:[{l:'Self-Motivation',v:92},{l:'Adaptability',v:64}],
+roleFit:['Staff / Principal engineer IC','Technical architecture','Platform / infrastructure lead','Open-source maintainer'],
+dev:[{area:'Emotion Management',v:42,action:'Active listening in 1:1s. "Reflect back" before responding to disagreements.'},{area:'Emotion Expression',v:58,action:'Share reasoning behind decisions. More context in PRs and code reviews.'},{area:'Adaptability',v:64,action:'1 cross-team project/quarter. Shadow a PM for one sprint.'}]},
+ppa:{sourceInfo:{instrument:'PPA — Personal Profile Analysis',provider:'Thomas International',administered:'Jan 2024',items:'24 forced-choice word groups · DISC-based',norm:'Validated against 33 million profiles worldwide'},
+style:'Dominant-Compliant (D/C-type)',selfImage:'Task-focused, direct, quality-driven. Drives results through technical excellence. Prefers autonomy. May appear abrasive when standards not met.',
+motivators:['Technical challenge','Autonomy and ownership','Recognition for expertise','Measurable results'],
+strengths:['Direct','Analytical','Determined','Quality-focused','Independent','Systematic','Logical','Persistent','Decisive','Technical','Thorough','Results-driven'],
+characteristics:['Direct task-focused communicator','Quality over relationships','Strong independent worker','High technical standards','Blunt under pressure'],
+orgValue:['Sets technical standards','Delivers complex systems reliably','Challenges weak architecture','Drives codebase quality'],
+underPressure:'More directive and critical. May alienate by prioritising correctness over relationships.',
+mask:'Low — minimal adaptation between work and natural style.'},
+},
+
+{id:7,name:'Sofia Reyes',title:'HR Business Partner',loc:'Mexico City, Mexico',initials:'SR',color:'#9333ea',exp:8,industry:'HR',
+skills:['Talent Management','L&D','Employment Law','HRIS','Org Design','Coaching'],
+cis:74,successPct:67,hiringRisk:'Low',riskReasons:['Low assertiveness limits C-suite influence','Limited commercial acumen'],
+scores:[
+{k:'fit',l:'Role Fit',v:76,d:'HR expertise & domain alignment',sources:[S.cr('SHRM-CP + ICF ACC Coaching cert + Org Design Specialisation — triple qualified'),S.me('5 HR articles · "Building L&D That Sticks" got 3.1K reads'),S.yt('3 L&D webinars on YouTube · 4.2K combined views — facilitation skill'),S.rd('r/humanresources: 200+ helpful answers on employment law and HRIS')]},
+{k:'impact',l:'Impact',v:69,d:'HR programme outcomes',sources:[S.me('Articles cite: 23% attrition reduction, 41% engagement improvement'),S.mt('Presented "Scaling Culture in Hypergrowth" to 60 attendees'),S.rd('Change management answers saved 80+ times — practical impact')]},
+{k:'traj',l:'Trajectory',v:72,d:'Career growth pace',sources:[S.cr('3 certs in 2 years: SHRM-CP, ICF ACC, Org Design — accelerating'),S.me('Tactical HR (2021) → strategic people ops (2024) — growing voice'),S.yt('"Onboarding 101" → "Building Leadership Pipelines" — scope expansion')]},
+{k:'stability',l:'Stability',v:82,d:'Retention indicators',sources:[S.li('3 roles / 8 yrs · avg 2.7 yrs · current 3.1 yrs — strong'),S.mt('Same HR Leaders group 2.5 years — consistent engagement'),S.rd('No job-seeking language in 2+ yrs — engaged')]},
+{k:'skill',l:'Skill Depth',v:70,d:'HR domain depth',sources:[S.cr('SHRM-CP + ICF ACC + Org Design — credentialed across HRBP domains'),S.rd('Depth on employment law (Mexico), HRIS, L&D programme design'),S.me('Genuine depth on engagement measurement and culture scaling')]},
+{k:'culture',l:'Culture Fit',v:80,d:'Interpersonal alignment',sources:[S.rd('Warm, encouraging, constructive · mentors junior HR professionals'),S.mt('Feedback: "approachable, listens first, genuinely cares"'),S.me('Employee advocacy balanced with business pragmatism — mature voice')]},
+],
+copilot:{strengths:['SHRM-CP + ICF ACC — dual-qualified across HR and leadership development','Measurable outcomes: 23% attrition reduction, 41% engagement improvement','Reddit r/humanresources: 200+ answers — recognised employment law expert','Current tenure 3.1 yrs — strong retention signal'],
+redFlags:['Low assertiveness — "too accommodating" with executive stakeholders','Limited commercial acumen — weak HR-to-business P&L connection','Reddit: emotional over-investment in employee advocacy vs business needs','No experience scaling HR beyond 200 people — unproven at enterprise'],
+rec:'Proceed to Interview',recColor:'#059669',recBg:'#ecfdf5',recDetail:'Solid HRBP with strong people skills. Best for mid-stage (100-500). Probe business acumen and executive influence.'},
+assessments:['hpti'],assessmentSummary:'HPTI: Conscientiousness 70 Optimal. Adjustment 74 Optimal — calm, resilient. Curiosity 62 Moderate. Risk Approach 38 Low — cautious. Competitiveness 44 Moderate — team-first.'},
+],
+
+/* ── helpers ── */
+function Icon({d,size=20,color='currentColor'}){return <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={d}/></svg>;}
+const ICONS={home:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+users:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+chart:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+cog:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
+back:'M15 19l-7-7 7-7',next:'M9 5l7 7-7 7',pin:'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z',
+brief:'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+bolt:'M13 10V3L4 14h7v7l9-11h-7z',check:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+warn:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+chat:'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+search:'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',plus:'M12 4v16m8-8H4',
+flag:'M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9',
+x:'M6 18L18 6M6 6l12 12',
+};
+
+/* ── SVG components ── */
+function MiniRing({v,size=44}){const r=16,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);return <svg width={size} height={size} viewBox="0 0 40 40"><circle cx="20" cy="20" r={r} fill="none" stroke="#e2e8f0" strokeWidth="3.5"/><circle cx="20" cy="20" r={r} fill="none" stroke={c.hex} strokeWidth="3.5" strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 20 20)"/><text x="20" y="20" textAnchor="middle" dominantBaseline="middle" fontSize="9.5" fontWeight="700" fill="#1e293b">{v}</text></svg>;}
+function BigGauge({v}){const r=50,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);return <svg width="130" height="130" viewBox="0 0 130 130"><circle cx="65" cy="65" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10"/><circle cx="65" cy="65" r={r} fill="none" stroke={c.hex} strokeWidth="10" strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 65 65)" style={{filter:`drop-shadow(0 0 8px ${c.hex}55)`}}/><text x="65" y="58" textAnchor="middle" fontSize="28" fontWeight="800" fill="#0f172a">{v}</text><text x="65" y="76" textAnchor="middle" fontSize="10" fill="#94a3b8">/100</text><text x="65" y="91" textAnchor="middle" fontSize="10" fill={c.hex} fontWeight="700">{c.label}</text></svg>;}
+function HptiGauge({trait}){const{l,v,zone,color,impl,develop}=trait;const cx=110,cy=90,r=65,W=220,H=110;const toRad=d=>d*Math.PI/180;const pt=s=>{const a=toRad(180-s*1.8);return[cx+r*Math.cos(a),cy-r*Math.sin(a)];};const arc=(s1,s2)=>{const[x1,y1]=pt(s1);const[x2,y2]=pt(Math.min(s2,99.9));return`M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 0 ${x2.toFixed(1)} ${y2.toFixed(1)}`;};const zones=[{f:0,t:25,c:'#fee2e2'},{f:25,t:60,c:'#fef9c3'},{f:60,t:80,c:'#d1fae5'},{f:80,t:100,c:'#ede9fe'}];const nRad=toRad(180-v*1.8);const nLen=r-14;const nX=(cx+nLen*Math.cos(nRad)).toFixed(1);const nY=(cy-nLen*Math.sin(nRad)).toFixed(1);const zs=zoneStyle(zone);return(<div className="card" style={{padding:'16px 10px 14px',textAlign:'center'}}><svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:'block',margin:'0 auto'}}>{zones.map(z=><path key={z.f} d={arc(z.f,z.t)} fill="none" stroke={z.c} strokeWidth={14} strokeLinecap="butt"/>)}<path d={arc(0,v)} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" opacity="0.9"/>{[{lbl:'Low',mid:12},{lbl:'Moderate',mid:42},{lbl:'Optimal',mid:70},{lbl:'Excessive',mid:90}].map(({lbl,mid})=>{const a=toRad(180-mid*1.8);const lr=r+18;return<text key={lbl} x={(cx+lr*Math.cos(a)).toFixed(1)} y={(cy-lr*Math.sin(a)).toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#94a3b8">{lbl}</text>;})}<line x1={cx} y1={cy} x2={nX} y2={nY} stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round"/><circle cx={cx} cy={cy} r="5" fill="#1e293b"/><circle cx={cx} cy={cy} r="2.5" fill="white"/><text x={cx} y={cy-20} textAnchor="middle" fontSize="26" fontWeight="800" fill="#0f172a">{v}</text><line x1={cx-r-6} y1={cy} x2={cx+r+6} y2={cy} stroke="#e2e8f0" strokeWidth="1"/></svg><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginTop:2}}>{l}</div><span style={{display:'inline-block',fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:20,marginTop:5,background:zs.bg,color:zs.tc}}>{zone}</span><div style={{fontSize:11,color:'#64748b',marginTop:6,lineHeight:1.5,padding:'0 6px'}}>{impl}</div></div>);}
+function FactorRadar({factors}){const n=factors.length,cx=120,cy=110,r=80,size=240;const angle=i=>(i/n)*2*Math.PI-Math.PI/2;const pt=(val,i)=>{const a=angle(i),rv=(val/100)*r;return[cx+rv*Math.cos(a),cy+rv*Math.sin(a)];};const grid=[25,50,75,100];return(<svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:'block',margin:'0 auto'}}>{grid.map(g=><polygon key={g} points={factors.map((_,i)=>{const[x,y]=pt(g,i);return`${x},${y}`}).join(' ')} fill="none" stroke="#e2e8f0" strokeWidth="1"/>)}{factors.map((_,i)=>{const[x,y]=pt(100,i);return<line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e2e8f0" strokeWidth="1"/>;})}<polygon points={factors.map((f,i)=>{const[x,y]=pt(f.v,i);return`${x},${y}`}).join(' ')} fill="#4f46e5" fillOpacity="0.12" stroke="#4f46e5" strokeWidth="2.5" strokeLinejoin="round"/>{factors.map((f,i)=>{const[x,y]=pt(f.v,i);return<circle key={i} cx={x} cy={y} r="5" fill={f.color} stroke="white" strokeWidth="1.5"/>;})}{factors.map((f,i)=>{const lr=r+26,a=angle(i),lx=cx+lr*Math.cos(a),ly=cy+lr*Math.sin(a);return<text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle" fontSize="11" fill="#475569" fontWeight="600">{f.l}</text>;})}</svg>);}
+function AssessmentProvenance({info}){return(<div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'13px 16px',background:'linear-gradient(90deg,#f0f9ff,#f8fafc)',border:'1px solid #bae6fd',borderRadius:10}}><div style={{width:34,height:34,background:'#0ea5e9',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon d={ICONS.check} size={17} color="#fff"/></div><div style={{flex:1}}><div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:8,marginBottom:6}}><span style={{fontSize:13,fontWeight:700,color:'#0c4a6e'}}>{info.instrument}</span><span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:20,background:'#dcfce7',color:'#166534',border:'1px solid #bbf7d0'}}>Zero Resume Dependency</span></div><div style={{display:'flex',flexWrap:'wrap',gap:14}}>{[['Provider',info.provider],['Administered',info.administered],['Format',info.items],['Benchmark',info.norm]].map(([l,v])=>(<div key={l} style={{fontSize:11}}><span style={{fontWeight:700,color:'#0369a1'}}>{l}: </span><span style={{color:'#475569'}}>{v}</span></div>))}</div></div></div>);}
+
+/* ── Score Detail Modal ── */
+function ScoreModal({score,onClose}){
+  if(!score)return null;
+  const cs=sc(score.v);
+  return(<div className="modal-bg" onClick={onClose}><div className="card fade" onClick={e=>e.stopPropagation()} style={{width:'100%',maxWidth:640,maxHeight:'85vh',overflow:'auto',padding:0}}>
+    <div style={{padding:'16px 20px',borderBottom:'1px solid #e2e8f0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',alignItems:'center',gap:10}}><span style={{fontSize:22,fontWeight:800,color:cs.hex}}>{score.v}</span><span style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>{score.l}</span><span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:cs.bg,color:cs.tc}}>{cs.label}</span></div>
+      <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',padding:4}}><Icon d={ICONS.x} size={20} color="#94a3b8"/></button>
     </div>
-  );
-}
-
-/* ── Assessment Provenance Banner ── */
-function AssessmentProvenance({info}){
-  return (
-    <div style={{display:'flex',alignItems:'flex-start',gap:12,padding:'13px 16px',
-      background:'linear-gradient(90deg,#f0f9ff,#f8fafc)',border:'1px solid #bae6fd',borderRadius:10}}>
-      <div style={{width:34,height:34,background:'#0ea5e9',borderRadius:9,display:'flex',
-        alignItems:'center',justifyContent:'center',flexShrink:0}}>
-        <Icon d={ICONS.check} size={17} color="#fff"/>
-      </div>
-      <div style={{flex:1}}>
-        <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:8,marginBottom:6}}>
-          <span style={{fontSize:13,fontWeight:700,color:'#0c4a6e'}}>{info.instrument}</span>
-          <span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:20,background:'#dcfce7',
-            color:'#166534',border:'1px solid #bbf7d0'}}>Zero Resume Dependency</span>
-        </div>
-        <div style={{display:'flex',flexWrap:'wrap',gap:14}}>
-          {[['Provider',info.provider],['Administered',info.administered],['Format',info.items],['Benchmark',info.norm]].map(([l,v])=>(
-            <div key={l} style={{fontSize:11}}>
-              <span style={{fontWeight:700,color:'#0369a1'}}>{l}: </span>
-              <span style={{color:'#475569'}}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div style={{padding:20}}>
+      <div style={{fontSize:12,color:'#64748b',marginBottom:16,lineHeight:1.6}}>{score.d}</div>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}><span style={{fontSize:10,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em'}}>Data Provenance</span><span style={{fontSize:9,fontWeight:700,padding:'1px 7px',borderRadius:10,background:'#dcfce7',color:'#166534',border:'1px solid #bbf7d0'}}>No Resume</span><span style={{fontSize:9,color:'#94a3b8',marginLeft:'auto'}}>LinkedIn capped at 15% · supplemented by open-web behavioural signals</span></div>
+      {(score.sources||[]).map(s=>(<div key={s.name} style={{marginBottom:14,padding:'12px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #f1f5f9'}}>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:6}}><span style={{width:8,height:8,borderRadius:'50%',background:s.color,flexShrink:0}}/><span style={{fontSize:12,fontWeight:700,color:s.color}}>{s.name}</span></div>
+        <div style={{fontSize:12,color:'#475569',lineHeight:1.7,paddingLeft:16}}>{s.note}</div>
+      </div>))}
     </div>
-  );
+  </div></div>);
 }
 
-/* ── MiniRing ── */
-function MiniRing({v,size=44}){
-  const r=16,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);
-  return <svg width={size} height={size} viewBox="0 0 40 40">
-    <circle cx="20" cy="20" r={r} fill="none" stroke="#e2e8f0" strokeWidth="3.5"/>
-    <circle cx="20" cy="20" r={r} fill="none" stroke={c.hex} strokeWidth="3.5"
-      strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 20 20)"/>
-    <text x="20" y="20" textAnchor="middle" dominantBaseline="middle" fontSize="9.5"
-      fontWeight="700" fill="#1e293b" fontFamily="Inter,sans-serif">{v}</text>
-  </svg>;
-}
-
-/* ── Big Gauge ── */
-function BigGauge({v}){
-  const r=50,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);
-  return <svg width="130" height="130" viewBox="0 0 130 130">
-    <circle cx="65" cy="65" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10"/>
-    <circle cx="65" cy="65" r={r} fill="none" stroke={c.hex} strokeWidth="10"
-      strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
-      transform="rotate(-90 65 65)" style={{filter:`drop-shadow(0 0 8px ${c.hex}55)`}}/>
-    <text x="65" y="58" textAnchor="middle" fontSize="28" fontWeight="800" fill="#0f172a" fontFamily="Inter,sans-serif">{v}</text>
-    <text x="65" y="76" textAnchor="middle" fontSize="10" fill="#94a3b8" fontFamily="Inter,sans-serif">/100</text>
-    <text x="65" y="91" textAnchor="middle" fontSize="10" fill={c.hex} fontWeight="700" fontFamily="Inter,sans-serif">{c.label}</text>
-  </svg>;
-}
-
-/* ── HPTI Semicircle Gauge ── */
-function HptiGauge({trait}){
-  const {l,v,zone,color,impl,develop}=trait;
-  const cx=110,cy=90,r=65,W=220,H=110;
-  const toRad=d=>d*Math.PI/180;
-  const pt=s=>{const a=toRad(180-s*1.8);return[cx+r*Math.cos(a),cy-r*Math.sin(a)];};
-  const arc=(s1,s2)=>{
-    const [x1,y1]=pt(s1);
-    const [x2,y2]=pt(Math.min(s2,99.9));
-    return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 0 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
-  };
-  const zones=[{f:0,t:25,c:'#fee2e2'},{f:25,t:60,c:'#fef9c3'},{f:60,t:80,c:'#d1fae5'},{f:80,t:100,c:'#ede9fe'}];
-  const nRad=toRad(180-v*1.8);
-  const nLen=r-14;
-  const nX=(cx+nLen*Math.cos(nRad)).toFixed(1);
-  const nY=(cy-nLen*Math.sin(nRad)).toFixed(1);
-  const zs=zoneStyle(zone);
-  return (
-    <div className="card" style={{padding:'16px 10px 14px',textAlign:'center'}}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:'block',margin:'0 auto'}}>
-        {zones.map(z=><path key={z.f} d={arc(z.f,z.t)} fill="none" stroke={z.c} strokeWidth={14} strokeLinecap="butt"/>)}
-        <path d={arc(0,v)} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" opacity="0.9"/>
-        {[{lbl:'Low',mid:12},{lbl:'Moderate',mid:42},{lbl:'Optimal',mid:70},{lbl:'Excessive',mid:90}].map(({lbl,mid})=>{
-          const a=toRad(180-mid*1.8);
-          const lr=r+18;
-          return <text key={lbl} x={(cx+lr*Math.cos(a)).toFixed(1)} y={(cy-lr*Math.sin(a)).toFixed(1)}
-            textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#94a3b8" fontFamily="Inter,sans-serif">{lbl}</text>;
-        })}
-        <line x1={cx} y1={cy} x2={nX} y2={nY} stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round"/>
-        <circle cx={cx} cy={cy} r="5" fill="#1e293b"/>
-        <circle cx={cx} cy={cy} r="2.5" fill="white"/>
-        <text x={cx} y={cy-20} textAnchor="middle" fontSize="26" fontWeight="800" fill="#0f172a" fontFamily="Inter,sans-serif">{v}</text>
-        <line x1={cx-r-6} y1={cy} x2={cx+r+6} y2={cy} stroke="#e2e8f0" strokeWidth="1"/>
-      </svg>
-      <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginTop:2}}>{l}</div>
-      <span style={{display:'inline-block',fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:20,marginTop:5,background:zs.bg,color:zs.tc}}>{zone}</span>
-      <div style={{fontSize:11,color:'#64748b',marginTop:6,lineHeight:1.5,padding:'0 6px'}}>{impl}</div>
-    </div>
-  );
-}
-
-/* ── TEIQue Radar (4 factors) ── */
-function FactorRadar({factors}){
-  const n=factors.length,cx=120,cy=110,r=80,size=240;
-  const angle=i=>(i/n)*2*Math.PI-Math.PI/2;
-  const pt=(val,i)=>{const a=angle(i),rv=(val/100)*r;return[cx+rv*Math.cos(a),cy+rv*Math.sin(a)];};
-  const grid=[25,50,75,100];
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:'block',margin:'0 auto'}}>
-      {grid.map(g=><polygon key={g}
-        points={factors.map((_,i)=>{const[x,y]=pt(g,i);return`${x},${y}`}).join(' ')}
-        fill="none" stroke="#e2e8f0" strokeWidth="1"/>)}
-      {factors.map((_,i)=>{const[x,y]=pt(100,i);return<line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e2e8f0" strokeWidth="1"/>;} )}
-      <polygon
-        points={factors.map((f,i)=>{const[x,y]=pt(f.v,i);return`${x},${y}`}).join(' ')}
-        fill="#4f46e5" fillOpacity="0.12" stroke="#4f46e5" strokeWidth="2.5" strokeLinejoin="round"/>
-      {factors.map((f,i)=>{
-        const[x,y]=pt(f.v,i);
-        return <circle key={i} cx={x} cy={y} r="5" fill={f.color} stroke="white" strokeWidth="1.5"/>;
-      })}
-      {factors.map((f,i)=>{
-        const lr=r+26,a=angle(i),lx=cx+lr*Math.cos(a),ly=cy+lr*Math.sin(a);
-        return <text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-          fontSize="11" fill="#475569" fontWeight="600" fontFamily="Inter,sans-serif">{f.l}</text>;
-      })}
-    </svg>
-  );
+/* ── Job Match ── */
+function computeMatch(c,req){
+  if(!req.trim())return 0;
+  const words=req.toLowerCase().split(/\W+/).filter(w=>w.length>2);
+  const text=[c.title,c.industry,...c.skills,...c.copilot.strengths].join(' ').toLowerCase();
+  const hits=words.filter(w=>text.includes(w));
+  const kw=Math.round((hits.length/Math.max(words.length,1))*100);
+  return Math.min(Math.round(kw*0.6+c.cis*0.4),99);
 }
 
 /* ── Sidebar ── */
-const NAV=[
-  {id:'dashboard',l:'Dashboard',i:'home'},
-  {id:'candidates',l:'Candidates',i:'users'},
-  {id:'analytics',l:'Analytics',i:'chart'},
-  {id:'settings',l:'Settings',i:'cog'},
-];
-function Sidebar({view,setView}){
-  return (
-    <div className="sidebar">
-      <div style={{padding:'20px 24px 16px',borderBottom:'1px solid #1f2937'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10}}>
-          <div style={{width:36,height:36,background:'#4f46e5',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <Icon d={ICONS.bolt} size={18} color="#fff"/>
-          </div>
-          <div>
-            <div style={{color:'#fff',fontWeight:700,fontSize:15}}>CareerIQ</div>
-            <div style={{color:'#6b7280',fontSize:11}}>Candidate Intelligence</div>
-          </div>
-        </div>
-      </div>
-      <nav style={{flex:1,padding:'16px 12px',display:'flex',flexDirection:'column',gap:2}}>
-        <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Menu</div>
-        {NAV.map(item=>{
-          const active=view===item.id||(view==='profile'&&item.id==='candidates');
-          return <button key={item.id} onClick={()=>setView(item.id)}
-            style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,border:'none',
-              cursor:'pointer',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif',
-              background:active?'#4f46e5':'transparent',color:active?'#fff':'#9ca3af',transition:'all .15s'}}>
-            <Icon d={ICONS[item.i]} size={17} color={active?'#fff':'#6b7280'}/>
-            {item.l}
-            {item.id==='candidates'&&<span style={{marginLeft:'auto',fontSize:11,fontWeight:700,padding:'1px 7px',borderRadius:20,
-              background:active?'#6366f1':'#1f2937',color:active?'#e0e7ff':'#6b7280'}}>2</span>}
-          </button>;
-        })}
-      </nav>
-      <div style={{padding:'0 12px 12px'}}>
-        <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Assessments</div>
-        {[{n:'TEIQue',c:'#4f46e5'},{n:'PPA',c:'#ec4899'},{n:'HPTI',c:'#0891b2'}].map(s=>(
-          <div key={s.n} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 8px'}}>
-            <span style={{width:7,height:7,borderRadius:'50%',background:s.c}} className="pulse"/>
-            <span style={{color:'#6b7280',fontSize:12}}>{s.n}</span>
-            <span style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'#10b981'}}/>
-          </div>
-        ))}
-      </div>
-      <div style={{padding:'12px',borderTop:'1px solid #1f2937'}}>
-        <div style={{display:'flex',alignItems:'center',gap:10,padding:'8px',borderRadius:8,cursor:'pointer'}}>
-          <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
-            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-            <span style={{color:'#fff',fontSize:11,fontWeight:700}}>RK</span>
-          </div>
-          <div>
-            <div style={{color:'#f9fafb',fontSize:13,fontWeight:600}}>Rachel Kim</div>
-            <div style={{color:'#6b7280',fontSize:11}}>Senior Recruiter</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const NAV=[{id:'dashboard',l:'Dashboard',i:'home'},{id:'candidates',l:'Candidates',i:'users'},{id:'analytics',l:'Analytics',i:'chart'},{id:'settings',l:'Settings',i:'cog'}];
+function Sidebar({view,setView}){return(
+<div className="sidebar">
+  <div style={{padding:'20px 24px 16px',borderBottom:'1px solid #1f2937'}}><div style={{display:'flex',alignItems:'center',gap:10}}><div style={{width:36,height:36,background:'#4f46e5',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon d={ICONS.bolt} size={18} color="#fff"/></div><div><div style={{color:'#fff',fontWeight:700,fontSize:15}}>CareerIQ</div><div style={{color:'#6b7280',fontSize:11}}>Candidate Intelligence</div></div></div></div>
+  <nav style={{flex:1,padding:'16px 12px',display:'flex',flexDirection:'column',gap:2}}>
+    <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Menu</div>
+    {NAV.map(item=>{const active=view===item.id||(view==='profile'&&item.id==='candidates');return<button key={item.id} onClick={()=>setView(item.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,border:'none',cursor:'pointer',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif',background:active?'#4f46e5':'transparent',color:active?'#fff':'#9ca3af',transition:'all .15s'}}><Icon d={ICONS[item.i]} size={17} color={active?'#fff':'#6b7280'}/>{item.l}{item.id==='candidates'&&<span style={{marginLeft:'auto',fontSize:11,fontWeight:700,padding:'1px 7px',borderRadius:20,background:active?'#6366f1':'#1f2937',color:active?'#e0e7ff':'#6b7280'}}>{CANDIDATES.length}</span>}</button>;})}
+  </nav>
+  <div style={{padding:'0 12px 12px'}}>
+    <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Data Sources</div>
+    {[{n:'GitHub',c:'#24292f'},{n:'Stack Overflow',c:'#f48024'},{n:'Medium',c:'#292929'},{n:'Reddit',c:'#ff4500'},{n:'Kaggle',c:'#20beff'},{n:'Coursera',c:'#0056d2'},{n:'Meetup',c:'#ed1c40'}].map(s=>(<div key={s.n} style={{display:'flex',alignItems:'center',gap:8,padding:'3px 8px'}}><span style={{width:7,height:7,borderRadius:'50%',background:s.c}} className="pulse"/><span style={{color:'#6b7280',fontSize:11}}>{s.n}</span><span style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'#10b981'}}/></div>))}
+  </div>
+  <div style={{padding:'12px',borderTop:'1px solid #1f2937'}}><div style={{display:'flex',alignItems:'center',gap:10,padding:'8px',borderRadius:8}}><div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><span style={{color:'#fff',fontSize:11,fontWeight:700}}>RK</span></div><div><div style={{color:'#f9fafb',fontSize:13,fontWeight:600}}>Rachel Kim</div><div style={{color:'#6b7280',fontSize:11}}>Senior Recruiter</div></div></div></div>
+</div>);}
 
 /* ── Dashboard ── */
 function Dashboard({onSelect}){
   const[q,setQ]=useState('');
-  const list=CANDIDATES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.title.toLowerCase().includes(q.toLowerCase()));
+  const[jobReq,setJobReq]=useState('');
+  const[matchMode,setMatchMode]=useState(false);
   const riskColor={Low:'#059669',Medium:'#d97706',High:'#dc2626'};
   const riskBg={Low:'#ecfdf5',Medium:'#fffbeb',High:'#fef2f2'};
-  return (
-    <div className="fade" style={{minHeight:'100%'}}>
-      <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'14px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
-        <div>
-          <div style={{fontSize:19,fontWeight:800,color:'#0f172a'}}>Candidate Intelligence Dashboard</div>
-          <div style={{fontSize:13,color:'#94a3b8',marginTop:2}}>Assessment-backed hiring decisions</div>
-        </div>
-        <button style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
-          <Icon d={ICONS.plus} size={15} color="#fff"/> Add Candidate
+
+  let list=CANDIDATES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.title.toLowerCase().includes(q.toLowerCase())||c.skills.some(s=>s.toLowerCase().includes(q.toLowerCase())));
+  const matchScores={};
+  if(matchMode&&jobReq.trim()){list.forEach(c=>{matchScores[c.id]=computeMatch(c,jobReq);});list=[...list].sort((a,b)=>matchScores[b.id]-matchScores[a.id]);}
+  else{list=[...list].sort((a,b)=>b.cis-a.cis);}
+
+  return(
+  <div className="fade" style={{minHeight:'100%'}}>
+    <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'14px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
+      <div><div style={{fontSize:19,fontWeight:800,color:'#0f172a'}}>Candidate Intelligence Dashboard</div><div style={{fontSize:13,color:'#94a3b8',marginTop:2}}>Multi-source behavioural intelligence — zero resume dependency</div></div>
+      <button style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}><Icon d={ICONS.plus} size={15} color="#fff"/>Add Candidate</button>
+    </div>
+
+    <div style={{padding:'20px 32px 0'}}>
+      {/* Job Requirement Match Panel */}
+      <div className="card" style={{padding:matchMode?20:0,marginBottom:matchMode?16:0,overflow:'hidden',border:matchMode?'2px solid #4f46e5':'1px solid #e2e8f0',transition:'all .2s',borderRadius:14}}>
+        <button onClick={()=>setMatchMode(!matchMode)} style={{width:'100%',display:'flex',alignItems:'center',gap:8,padding:matchMode?'0 0 14px':'14px 20px',background:'none',border:'none',cursor:'pointer',fontFamily:'Inter,sans-serif',fontSize:14,fontWeight:700,color:'#4f46e5'}}>
+          <Icon d={ICONS.search} size={18} color="#4f46e5"/>{matchMode?'Job Requirement Match':'Match Candidates to a Job Requirement'}<Icon d={matchMode?ICONS.x:ICONS.next} size={16} color="#4f46e5"/>
         </button>
+        {matchMode&&<div>
+          <textarea value={jobReq} onChange={e=>setJobReq(e.target.value)} placeholder="Enter job requirement, e.g.: Senior Python engineer with ML experience, strong communication, team leadership, Kubernetes preferred..." rows={3} style={{width:'100%',padding:12,border:'1px solid #e2e8f0',borderRadius:10,fontSize:13,fontFamily:'Inter,sans-serif',resize:'vertical',outline:'none'}}/>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10}}>
+            <div style={{fontSize:12,color:'#64748b'}}>Candidates ranked by match score (skill overlap 60% + intelligence score 40%)</div>
+            {jobReq.trim()&&<span style={{marginLeft:'auto',fontSize:12,fontWeight:700,color:'#4f46e5'}}>{list.length} results</span>}
+          </div>
+        </div>}
       </div>
 
-      {/* Stats strip */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,padding:'24px 32px 0'}}>
-        {[
-          {l:'Candidates Assessed',v:'2',sub:'TEIQue · PPA · HPTI',bg:'#eef2ff',ic:'#4f46e5',d:ICONS.users},
-          {l:'Avg CIS Score',       v:'81',sub:'Above market median',bg:'#ecfdf5',ic:'#10b981',d:ICONS.bolt},
-          {l:'Assessment Types',   v:'3',sub:'TEIQue, PPA, HPTI',bg:'#eff6ff',ic:'#3b82f6',d:ICONS.chart},
-          {l:'Proceed to Interview',v:'2',sub:'Both recommended',bg:'#f0fdf4',ic:'#16a34a',d:ICONS.check},
-        ].map((s,i)=>(
-          <div key={i} className="card" style={{padding:18,display:'flex',alignItems:'flex-start',gap:12}}>
-            <div style={{width:38,height:38,borderRadius:10,background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-              <Icon d={s.d} size={18} color={s.ic}/>
-            </div>
-            <div>
-              <div style={{fontSize:24,fontWeight:800,color:'#0f172a',lineHeight:1}}>{s.v}</div>
-              <div style={{fontSize:12,fontWeight:600,color:'#374151',marginTop:2}}>{s.l}</div>
-              <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{s.sub}</div>
-            </div>
-          </div>
-        ))}
+      {/* Stats */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,marginBottom:16}}>
+        {[{l:'Candidates',v:String(CANDIDATES.length),sub:'From 7 industries',bg:'#eef2ff',ic:'#4f46e5',d:ICONS.users},{l:'Avg CIS',v:String(Math.round(CANDIDATES.reduce((a,c)=>a+c.cis,0)/CANDIDATES.length)),sub:'Intelligence Score',bg:'#ecfdf5',ic:'#10b981',d:ICONS.bolt},{l:'Data Sources',v:'15+',sub:'GitHub, SO, Reddit, etc.',bg:'#eff6ff',ic:'#3b82f6',d:ICONS.chart},{l:'Assessments',v:'3',sub:'TEIQue · PPA · HPTI',bg:'#f0fdf4',ic:'#16a34a',d:ICONS.check}].map((s,i)=>(
+          <div key={i} className="card" style={{padding:16,display:'flex',alignItems:'flex-start',gap:10}}><div style={{width:36,height:36,borderRadius:10,background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}><Icon d={s.d} size={17} color={s.ic}/></div><div><div style={{fontSize:22,fontWeight:800,color:'#0f172a',lineHeight:1}}>{s.v}</div><div style={{fontSize:12,fontWeight:600,color:'#374151',marginTop:2}}>{s.l}</div><div style={{fontSize:11,color:'#94a3b8'}}>{s.sub}</div></div></div>))}
       </div>
 
       {/* Search */}
-      <div style={{padding:'20px 32px 0',display:'flex',alignItems:'center',gap:10}}>
-        <div style={{position:'relative',maxWidth:360}}>
-          <div style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)'}}>
-            <Icon d={ICONS.search} size={15} color="#94a3b8"/>
-          </div>
-          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search candidates..."
-            style={{width:340,padding:'9px 12px 9px 34px',background:'#fff',border:'1px solid #e2e8f0',
-              borderRadius:8,fontSize:13,outline:'none',fontFamily:'Inter,sans-serif'}}/>
-        </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+        <div style={{position:'relative',maxWidth:360}}><div style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)'}}><Icon d={ICONS.search} size={15} color="#94a3b8"/></div><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search by name, title, or skill..." style={{width:340,padding:'9px 12px 9px 34px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,outline:'none',fontFamily:'Inter,sans-serif'}}/></div>
         <span style={{fontSize:12,color:'#94a3b8',marginLeft:'auto'}}>{list.length} candidates</span>
       </div>
+    </div>
 
-      {/* Candidate cards */}
-      <div style={{padding:'20px 32px 32px',display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:20}}>
-        {list.map(c=>{
-          const C=sc(c.cis);
-          return (
-            <div key={c.id} className="card card-h" onClick={()=>onSelect(c)} style={{padding:24}}>
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16}}>
-                <div style={{display:'flex',alignItems:'center',gap:12}}>
-                  <div style={{width:52,height:52,borderRadius:14,background:c.color,display:'flex',alignItems:'center',
-                    justifyContent:'center',color:'#fff',fontWeight:800,fontSize:15,flexShrink:0,boxShadow:`0 4px 12px ${c.color}44`}}>
-                    {c.initials}
-                  </div>
-                  <div>
-                    <div style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>{c.name}</div>
-                    <div style={{fontSize:13,color:'#64748b',marginTop:2}}>{c.title}</div>
-                    <div style={{display:'flex',alignItems:'center',gap:12,marginTop:5,fontSize:12,color:'#94a3b8'}}>
-                      <span style={{display:'flex',alignItems:'center',gap:3}}>
-                        <Icon d={ICONS.pin} size={13} color="#94a3b8"/>{c.loc}
-                      </span>
-                      <span style={{display:'flex',alignItems:'center',gap:3}}>
-                        <Icon d={ICONS.brief} size={13} color="#94a3b8"/>{c.exp} yrs exp
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{textAlign:'center',flexShrink:0}}>
-                  <BigGauge v={c.cis}/>
-                  <div style={{fontSize:10,color:'#94a3b8',fontWeight:500,marginTop:2}}>Intelligence Score</div>
-                </div>
-              </div>
-
-              {/* Assessment badges */}
-              <div style={{display:'flex',gap:6,marginBottom:14}}>
-                {c.assessments.map(a=>(
-                  <span key={a} style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:6,
-                    background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',
-                    color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1'}}>
-                    {a==='teique'?'TEIQue':a==='ppa'?'PPA':'HPTI'}
-                  </span>
-                ))}
-              </div>
-
-              {/* Score bars */}
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 16px',marginBottom:14}}>
-                {c.scores.map(s=>{
-                  const cs=sc(s.v);
-                  return (
-                    <div key={s.k}>
-                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
-                        <span style={{fontSize:11,color:'#64748b'}}>{s.l}</span>
-                        <span style={{fontSize:11,fontWeight:700,color:cs.hex}}>{s.v}</span>
-                      </div>
-                      <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
-                        <div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Footer */}
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:12,borderTop:'1px solid #f1f5f9'}}>
-                <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  <span style={{fontSize:11,color:'#64748b'}}>Hiring Risk:</span>
-                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
-                    background:riskBg[c.hiringRisk],color:riskColor[c.hiringRisk]}}>{c.hiringRisk}</span>
-                </div>
-                <span style={{fontSize:12,fontWeight:700,color:'#4f46e5',display:'flex',alignItems:'center',gap:3}}>
-                  View Full Profile <Icon d={ICONS.next} size={13} color="#4f46e5"/>
-                </span>
+    {/* Cards */}
+    <div style={{padding:'0 32px 32px',display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
+      {list.map(c=>{const C=sc(c.cis);const match=matchScores[c.id];return(
+        <div key={c.id} className="card card-h" onClick={()=>onSelect(c)} style={{padding:20}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <div style={{width:48,height:48,borderRadius:14,background:c.color,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:14,flexShrink:0,boxShadow:`0 4px 12px ${c.color}44`}}>{c.initials}</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:700,color:'#0f172a'}}>{c.name}</div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:1}}>{c.title}</div>
+                <div style={{display:'flex',gap:8,marginTop:4,fontSize:11,color:'#94a3b8'}}><span style={{display:'flex',alignItems:'center',gap:3}}><Icon d={ICONS.pin} size={12} color="#94a3b8"/>{c.loc}</span><span style={{display:'flex',alignItems:'center',gap:3}}><Icon d={ICONS.brief} size={12} color="#94a3b8"/>{c.exp}yr</span></div>
               </div>
             </div>
-          );
-        })}
-      </div>
+            <div style={{textAlign:'center',flexShrink:0}}>
+              {match!=null&&<div style={{fontSize:11,fontWeight:700,color:'#4f46e5',marginBottom:2}}>Match {match}%</div>}
+              <MiniRing v={c.cis} size={52}/>
+            </div>
+          </div>
+          {/* Assessment + industry badges */}
+          <div style={{display:'flex',gap:5,marginBottom:10,flexWrap:'wrap'}}>
+            <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:6,background:'#f1f5f9',color:'#475569'}}>{c.industry}</span>
+            {c.assessments.map(a=><span key={a} style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:6,background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1'}}>{a==='teique'?'TEIQue':a==='ppa'?'PPA':'HPTI'}</span>)}
+          </div>
+          {/* Scores */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'5px 14px',marginBottom:12}}>
+            {c.scores.map(s=>{const cs=sc(s.v);return(<div key={s.k}><div style={{display:'flex',justifyContent:'space-between',marginBottom:2}}><span style={{fontSize:11,color:'#64748b'}}>{s.l}</span><span style={{fontSize:11,fontWeight:700,color:cs.hex}}>{s.v}</span></div><div style={{height:4,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}><div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/></div></div>);})}
+          </div>
+          {/* Red flag count + risk */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:10,borderTop:'1px solid #f1f5f9'}}>
+            <div style={{display:'flex',alignItems:'center',gap:8}}>
+              <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:riskBg[c.hiringRisk],color:riskColor[c.hiringRisk]}}>{c.hiringRisk} Risk</span>
+              <span style={{display:'flex',alignItems:'center',gap:3,fontSize:11,color:'#ef4444'}}><Icon d={ICONS.flag} size={12} color="#ef4444"/>{c.copilot.redFlags.length} red flags</span>
+            </div>
+            <span style={{fontSize:12,fontWeight:700,color:'#4f46e5',display:'flex',alignItems:'center',gap:3}}>View Profile<Icon d={ICONS.next} size={13} color="#4f46e5"/></span>
+          </div>
+        </div>
+      );})}
     </div>
-  );
+  </div>);
 }
 
 /* ── OVERVIEW TAB ── */
 function OverviewTab({c}){
-  const rC={Low:'#059669',Medium:'#d97706',High:'#dc2626'};
-  const rB={Low:'#ecfdf5',Medium:'#fffbeb',High:'#fef2f2'};
-  return (
-    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
-      {/* CIS scores grid */}
-      <div>
-        <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Candidate Intelligence Score Breakdown</div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
-          {c.scores.map(s=>{
-            const cs=sc(s.v);
-            return (
-              <div key={s.k} className="card" style={{padding:16,borderLeft:`4px solid ${cs.hex}`}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
-                  <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{s.l}</div>
-                  <div style={{fontSize:22,fontWeight:800,color:cs.hex}}>{s.v}</div>
-                </div>
-                <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:8}}>
-                  <div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/>
-                </div>
-                <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{s.d}</div>
-                {s.sources&&<DataProvenanceBox sources={s.sources}/>}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+  const[modal,setModal]=useState(null);
+  const rC={Low:'#059669',Medium:'#d97706',High:'#dc2626'};const rB={Low:'#ecfdf5',Medium:'#fffbeb',High:'#fef2f2'};
+  return(<div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+    <ScoreModal score={modal} onClose={()=>setModal(null)}/>
+    <div><div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Candidate Intelligence Score — Click any card for full source breakdown</div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
+      {c.scores.map(s=>{const cs=sc(s.v);return(
+        <div key={s.k} className="card card-h" onClick={()=>setModal(s)} style={{padding:16,borderLeft:`4px solid ${cs.hex}`}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{s.l}</div><div style={{fontSize:22,fontWeight:800,color:cs.hex}}>{s.v}</div></div>
+          <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:8}}><div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/></div>
+          <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.4,marginBottom:8}}>{s.d}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{(s.sources||[]).map(src=><span key={src.name} style={{fontSize:9,fontWeight:700,padding:'1px 6px',borderRadius:4,background:src.color+'15',color:src.color,border:`1px solid ${src.color}30`}}>{src.name}</span>)}</div>
+        </div>);})}
+    </div></div>
 
-      {/* Success prediction + hiring risk */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-        <div className="card" style={{padding:18}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Success Prediction</div>
-          <div style={{display:'flex',alignItems:'center',gap:12}}>
-            <div style={{fontSize:36,fontWeight:800,color:'#4f46e5'}}>{c.successPct}%</div>
-            <div>
-              <div style={{height:8,width:200,background:'#f1f5f9',borderRadius:4,overflow:'hidden',marginBottom:4}}>
-                <div className="bar" style={{height:'100%',width:c.successPct+'%',background:'#4f46e5',borderRadius:4}}/>
-              </div>
-              <div style={{fontSize:11,color:'#94a3b8'}}>Probability of high performance at 12 months</div>
-            </div>
-          </div>
-        </div>
-        <div className="card" style={{padding:18}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Hiring Risk Assessment</div>
-          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-            <span style={{fontSize:20,fontWeight:800,padding:'4px 14px',borderRadius:8,
-              background:rB[c.hiringRisk],color:rC[c.hiringRisk]}}>{c.hiringRisk}</span>
-            <span style={{fontSize:12,color:'#64748b'}}>Risk Level</span>
-          </div>
-          {c.riskReasons.map((r,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:4}}>
-              <Icon d={ICONS.warn} size={14} color={rC[c.hiringRisk]}/>
-              <span style={{fontSize:11,color:'#64748b',lineHeight:1.4}}>{r}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* AI Copilot */}
-      <div className="card" style={{overflow:'hidden'}}>
-        <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',padding:'14px 20px',display:'flex',alignItems:'center',gap:8}}>
-          <div style={{width:30,height:30,background:'rgba(255,255,255,.15)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
-            <Icon d={ICONS.chat} size={16} color="#fff"/>
-          </div>
-          <div style={{color:'#fff',fontWeight:700,fontSize:14}}>AI Recruiter Copilot</div>
-          <span style={{marginLeft:'auto',fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20,
-            background:c.copilot.recBg,color:c.copilot.recColor}}>{c.copilot.rec}</span>
-        </div>
-        <div style={{padding:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:'#059669',marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
-              <Icon d={ICONS.check} size={14} color="#059669"/> Top Strengths
-            </div>
-            {c.copilot.strengths.map((s,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
-                <span style={{width:5,height:5,borderRadius:'50%',background:'#10b981',marginTop:6,flexShrink:0}}/>
-                <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span>
-              </div>
-            ))}
-          </div>
-          <div>
-            <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
-              <Icon d={ICONS.warn} size={14} color="#d97706"/> Watch Points
-            </div>
-            {c.copilot.concerns.map((s,i)=>(
-              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
-                <span style={{width:5,height:5,borderRadius:'50%',background:'#f59e0b',marginTop:6,flexShrink:0}}/>
-                <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div style={{margin:'0 20px 20px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'12px 14px'}}>
-          <span style={{fontSize:12,fontWeight:700,color:'#374151'}}>Recommendation: </span>
-          <span style={{fontSize:12,color:'#64748b'}}>{c.copilot.recDetail}</span>
-        </div>
-      </div>
+    {/* Success + Risk */}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+      <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Success Prediction</div><div style={{display:'flex',alignItems:'center',gap:12}}><div style={{fontSize:36,fontWeight:800,color:'#4f46e5'}}>{c.successPct}%</div><div><div style={{height:8,width:200,background:'#f1f5f9',borderRadius:4,overflow:'hidden',marginBottom:4}}><div className="bar" style={{height:'100%',width:c.successPct+'%',background:'#4f46e5',borderRadius:4}}/></div><div style={{fontSize:11,color:'#94a3b8'}}>High performance probability at 12 months</div></div></div></div>
+      <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Hiring Risk</div><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}><span style={{fontSize:20,fontWeight:800,padding:'4px 14px',borderRadius:8,background:rB[c.hiringRisk],color:rC[c.hiringRisk]}}>{c.hiringRisk}</span></div>{c.riskReasons.map((r,i)=><div key={i} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:4}}><Icon d={ICONS.warn} size={14} color={rC[c.hiringRisk]}/><span style={{fontSize:11,color:'#64748b',lineHeight:1.4}}>{r}</span></div>)}</div>
     </div>
-  );
+
+    {/* AI Copilot with Red Flags */}
+    <div className="card" style={{overflow:'hidden'}}>
+      <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',padding:'14px 20px',display:'flex',alignItems:'center',gap:8}}><div style={{width:30,height:30,background:'rgba(255,255,255,.15)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}><Icon d={ICONS.chat} size={16} color="#fff"/></div><div style={{color:'#fff',fontWeight:700,fontSize:14}}>AI Recruiter Copilot</div><span style={{marginLeft:'auto',fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20,background:c.copilot.recBg,color:c.copilot.recColor}}>{c.copilot.rec}</span></div>
+      <div style={{padding:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'#059669',marginBottom:8,display:'flex',alignItems:'center',gap:5}}><Icon d={ICONS.check} size={14} color="#059669"/>Top Strengths</div>
+          {c.copilot.strengths.map((s,i)=><div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}><span style={{width:5,height:5,borderRadius:'50%',background:'#10b981',marginTop:6,flexShrink:0}}/><span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span></div>)}
+        </div>
+        <div>
+          <div style={{fontSize:12,fontWeight:700,color:'#dc2626',marginBottom:8,display:'flex',alignItems:'center',gap:5}}><Icon d={ICONS.flag} size={14} color="#dc2626"/>Red Flags</div>
+          {c.copilot.redFlags.map((s,i)=><div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}><span style={{width:5,height:5,borderRadius:'50%',background:'#ef4444',marginTop:6,flexShrink:0}}/><span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span></div>)}
+        </div>
+      </div>
+      <div style={{margin:'0 20px 20px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'12px 14px'}}><span style={{fontSize:12,fontWeight:700,color:'#374151'}}>Recommendation: </span><span style={{fontSize:12,color:'#64748b'}}>{c.copilot.recDetail}</span></div>
+    </div>
+  </div>);
 }
 
 /* ── TEIQUE TAB ── */
 function TeIQueTab({data}){
-  const groupColors={'Wellbeing':'#10b981','Emotionality':'#4f46e5','Self-Control':'#0ea5e9','Sociability':'#f59e0b'};
-  return (
-    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
-      {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
-      {/* Header row */}
-      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:20}}>
-        <div className="card" style={{padding:24,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minWidth:220}}>
-          <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Overall TEI Score</div>
-          <div style={{fontSize:64,fontWeight:800,color:'#4f46e5',lineHeight:1}}>{data.overall}</div>
-          <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>Percentile</div>
-          <div style={{marginTop:12,padding:'4px 14px',background:'#eef2ff',borderRadius:20}}>
-            <span style={{fontSize:12,fontWeight:700,color:'#4338ca'}}>Exceptional</span>
-          </div>
-          <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
-            {data.global.map(g=>{
-              const c=sc(g.v);
-              return <div key={g.l}>
-                <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
-                  <span style={{fontSize:11,color:'#64748b'}}>{g.l}</span>
-                  <span style={{fontSize:11,fontWeight:700,color:c.hex}}>{g.v}%</span>
-                </div>
-                <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
-                  <div className="bar" style={{height:'100%',width:g.v+'%',background:c.hex,borderRadius:3}}/>
-                </div>
-              </div>;
-            })}
-          </div>
-        </div>
-        <div className="card" style={{padding:24}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:4}}>Factor Profile</div>
-          <div style={{fontSize:12,color:'#94a3b8',marginBottom:4}}>Four core TEIQue dimensions</div>
-          <FactorRadar factors={data.factors}/>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
-            {data.factors.map(f=>{
-              const c=sc(f.v);
-              return <div key={f.l} style={{display:'flex',alignItems:'center',gap:8}}>
-                <span style={{width:10,height:10,borderRadius:'50%',background:f.color,flexShrink:0}}/>
-                <span style={{fontSize:12,color:'#374151',flex:1}}>{f.l}</span>
-                <span style={{fontSize:12,fontWeight:700,color:c.hex}}>{f.v}</span>
-              </div>;
-            })}
-          </div>
-        </div>
+  const gc={'Wellbeing':'#10b981','Emotionality':'#4f46e5','Self-Control':'#0ea5e9','Sociability':'#f59e0b'};
+  return(<div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+    {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
+    <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:20}}>
+      <div className="card" style={{padding:24,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minWidth:220}}>
+        <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Overall TEI Score</div>
+        <div style={{fontSize:64,fontWeight:800,color:'#4f46e5',lineHeight:1}}>{data.overall}</div>
+        <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>Percentile</div>
+        <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{data.global.map(g=>{const c=sc(g.v);return<div key={g.l}><div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}><span style={{fontSize:11,color:'#64748b'}}>{g.l}</span><span style={{fontSize:11,fontWeight:700,color:c.hex}}>{g.v}%</span></div><div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}><div className="bar" style={{height:'100%',width:g.v+'%',background:c.hex,borderRadius:3}}/></div></div>;})}</div>
       </div>
-
-      {/* Facet breakdown */}
-      <div>
-        <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Facet Breakdown by Factor</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-          {data.groups.map(grp=>(
-            <div key={grp.g} className="card" style={{padding:16,borderTop:`3px solid ${groupColors[grp.g]}`}}>
-              <div style={{fontSize:12,fontWeight:700,color:groupColors[grp.g],marginBottom:12,textTransform:'uppercase',letterSpacing:'.06em'}}>{grp.g}</div>
-              {grp.items.map(item=>{
-                const c=sc(item.v);
-                return <div key={item.l} style={{marginBottom:10}}>
-                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
-                    <span style={{fontSize:12,color:'#374151'}}>{item.l}</span>
-                    <span style={{fontSize:12,fontWeight:700,color:c.hex}}>{item.v}%</span>
-                  </div>
-                  <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
-                    <div className="bar" style={{height:'100%',width:item.v+'%',background:c.hex,borderRadius:3}}/>
-                  </div>
-                </div>;
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Role fit */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>High-Fit Roles (TEIQue-based)</div>
-        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-          {data.roleFit.map(r=>(
-            <span key={r} style={{fontSize:12,fontWeight:600,padding:'5px 12px',background:'#eef2ff',color:'#4338ca',borderRadius:8,border:'1px solid #c7d2fe'}}>{r}</span>
-          ))}
-        </div>
-      </div>
+      <div className="card" style={{padding:24}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:4}}>Factor Profile</div><FactorRadar factors={data.factors}/><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>{data.factors.map(f=>{const c=sc(f.v);return<div key={f.l} style={{display:'flex',alignItems:'center',gap:8}}><span style={{width:10,height:10,borderRadius:'50%',background:f.color,flexShrink:0}}/><span style={{fontSize:12,color:'#374151',flex:1}}>{f.l}</span><span style={{fontSize:12,fontWeight:700,color:c.hex}}>{f.v}</span></div>;})}</div></div>
     </div>
-  );
+    <div><div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Facet Breakdown</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>{data.groups.map(grp=><div key={grp.g} className="card" style={{padding:16,borderTop:`3px solid ${gc[grp.g]}`}}><div style={{fontSize:12,fontWeight:700,color:gc[grp.g],marginBottom:12,textTransform:'uppercase',letterSpacing:'.06em'}}>{grp.g}</div>{grp.items.map(item=>{const c=sc(item.v);return<div key={item.l} style={{marginBottom:10}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}><span style={{fontSize:12,color:'#374151'}}>{item.l}</span><span style={{fontSize:12,fontWeight:700,color:c.hex}}>{item.v}%</span></div><div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}><div className="bar" style={{height:'100%',width:item.v+'%',background:c.hex,borderRadius:3}}/></div></div>;})}</div>)}</div></div>
+    <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>High-Fit Roles</div><div style={{display:'flex',flexWrap:'wrap',gap:8}}>{data.roleFit.map(r=><span key={r} style={{fontSize:12,fontWeight:600,padding:'5px 12px',background:'#eef2ff',color:'#4338ca',borderRadius:8,border:'1px solid #c7d2fe'}}>{r}</span>)}</div></div>
+  </div>);
 }
 
 /* ── PPA TAB ── */
-function PpaTab({data}){
-  return (
-    <div className="fade" style={{display:'flex',flexDirection:'column',gap:16}}>
-      {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-        {/* Style */}
-        <div className="card" style={{padding:20,borderTop:'3px solid #ec4899'}}>
-          <div style={{fontSize:11,fontWeight:700,color:'#ec4899',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:6}}>Behavioural Style</div>
-          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{data.style}</div>
-          <div style={{fontSize:13,color:'#475569',lineHeight:1.7}}>{data.selfImage}</div>
-        </div>
-        {/* Under pressure */}
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <div className="card" style={{padding:16}}>
-            <div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Under Pressure</div>
-            <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.underPressure}</div>
-          </div>
-          <div className="card" style={{padding:16}}>
-            <div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Work Mask</div>
-            <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.mask}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Motivators */}
-      <div className="card" style={{padding:18}}>
-        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Motivators</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-          {data.motivators.map((m,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'8px 10px',background:'#fdf2f8',borderRadius:8}}>
-              <span style={{fontSize:14,flexShrink:0}}>{'🏆🤝💼🕊️'[i]}</span>
-              <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{m}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-        {/* Strengths */}
-        <div className="card" style={{padding:18}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Strengths</div>
-          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-            {data.strengths.map(s=>(
-              <span key={s} style={{fontSize:11,fontWeight:600,padding:'3px 9px',background:'#f0fdf4',color:'#166534',borderRadius:6,border:'1px solid #bbf7d0'}}>{s}</span>
-            ))}
-          </div>
-        </div>
-        {/* Org value */}
-        <div className="card" style={{padding:18}}>
-          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Value to Organisation</div>
-          {data.orgValue.map((v,i)=>(
-            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
-              <span style={{width:5,height:5,borderRadius:'50%',background:'#ec4899',marginTop:7,flexShrink:0}}/>
-              <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{v}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+function PpaTab({data}){return(
+<div className="fade" style={{display:'flex',flexDirection:'column',gap:16}}>
+  {data.sourceInfo&&<AssessmentProvenance info={data.sourceInfo}/>}
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+    <div className="card" style={{padding:20,borderTop:'3px solid #ec4899'}}><div style={{fontSize:11,fontWeight:700,color:'#ec4899',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:6}}>Behavioural Style</div><div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{data.style}</div><div style={{fontSize:13,color:'#475569',lineHeight:1.7}}>{data.selfImage}</div></div>
+    <div style={{display:'flex',flexDirection:'column',gap:14}}><div className="card" style={{padding:16}}><div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Under Pressure</div><div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.underPressure}</div></div><div className="card" style={{padding:16}}><div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Work Mask</div><div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.mask}</div></div></div>
+  </div>
+  <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Motivators</div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{data.motivators.map((m,i)=><div key={i} style={{padding:'8px 10px',background:'#fdf2f8',borderRadius:8}}><span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{m}</span></div>)}</div></div>
+  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+    <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Strengths</div><div style={{display:'flex',flexWrap:'wrap',gap:6}}>{data.strengths.map(s=><span key={s} style={{fontSize:11,fontWeight:600,padding:'3px 9px',background:'#f0fdf4',color:'#166534',borderRadius:6,border:'1px solid #bbf7d0'}}>{s}</span>)}</div></div>
+    <div className="card" style={{padding:18}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Value to Organisation</div>{data.orgValue.map((v,i)=><div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}><span style={{width:5,height:5,borderRadius:'50%',background:'#ec4899',marginTop:7,flexShrink:0}}/><span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{v}</span></div>)}</div>
+  </div>
+</div>);}
 
 /* ── HPTI TAB ── */
-function HptiTab({traits,sourceInfo}){
-  return (
-    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
-      {sourceInfo&&<AssessmentProvenance info={sourceInfo}/>}
-      <div style={{padding:'14px 18px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,color:'#475569',lineHeight:1.6}}>
-        <strong style={{color:'#1e293b'}}>About HPTI: </strong>
-        Six stable personality traits linked to senior leadership potential. Scores are classified as <em>Low, Moderate, Optimal,</em> or <em>Excessive</em> — each indicating different leadership implications. Traits are not predictive in isolation; success also depends on skills, motivation, and experience.
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
-        {traits.map(t=><HptiGauge key={t.l} trait={t}/>)}
-      </div>
-      <div className="card" style={{padding:20}}>
-        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:12}}>Development Focus Areas</div>
-        <div style={{display:'flex',flexDirection:'column',gap:10}}>
-          {traits.map(t=>(
-            <div key={t.l} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'10px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0'}}>
-              <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,flexShrink:0,marginTop:1,
-                background:zoneStyle(t.zone).bg,color:zoneStyle(t.zone).tc}}>{t.zone}</span>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:'#1e293b',marginBottom:2}}>{t.l}</div>
-                <div style={{fontSize:12,color:'#64748b',lineHeight:1.5}}>{t.develop}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+function HptiTab({traits,sourceInfo}){return(
+<div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+  {sourceInfo&&<AssessmentProvenance info={sourceInfo}/>}
+  <div style={{padding:'14px 18px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,color:'#475569',lineHeight:1.6}}><strong style={{color:'#1e293b'}}>About HPTI: </strong>Six stable personality traits linked to leadership potential. Scored as <em>Low, Moderate, Optimal,</em> or <em>Excessive</em>.</div>
+  <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>{traits.map(t=><HptiGauge key={t.l} trait={t}/>)}</div>
+  <div className="card" style={{padding:20}}><div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:12}}>Development Focus</div><div style={{display:'flex',flexDirection:'column',gap:10}}>{traits.map(t=><div key={t.l} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'10px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0'}}><span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,flexShrink:0,marginTop:1,background:zoneStyle(t.zone).bg,color:zoneStyle(t.zone).tc}}>{t.zone}</span><div><div style={{fontSize:12,fontWeight:700,color:'#1e293b',marginBottom:2}}>{t.l}</div><div style={{fontSize:12,color:'#64748b',lineHeight:1.5}}>{t.develop}</div></div></div>)}</div></div>
+</div>);}
+
+/* ── DEV TAB ── */
+function DevTab({c}){
+  const devItems=c.teique?c.teique.dev:[];
+  const hptiItems=c.hpti?c.hpti.filter(t=>t.zone==='Excessive'||t.zone==='Low'||t.v<65):[];
+  return(<div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+    {devItems.length>0&&<div><div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>TEIQue — Priority Development</div><div style={{display:'flex',flexDirection:'column',gap:12}}>{devItems.map((d,i)=>{const cs=sc(d.v);return<div key={i} className="card" style={{padding:18,borderLeft:`4px solid ${cs.hex}`}}><div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}><span style={{fontSize:20,fontWeight:800,color:cs.hex}}>{d.v}%</span><div style={{fontSize:14,fontWeight:700,color:'#1e293b'}}>{d.area}</div><span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:cs.bg,color:cs.tc,marginLeft:'auto'}}>{cs.label}</span></div><div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:10}}><div className="bar" style={{height:'100%',width:d.v+'%',background:cs.hex,borderRadius:3}}/></div><div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}><strong style={{color:'#374151'}}>Action: </strong>{d.action}</div></div>;})}</div></div>}
+    {hptiItems.length>0&&<div><div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>HPTI — Leadership Development</div><div style={{display:'flex',flexDirection:'column',gap:10}}>{hptiItems.map(t=>{const zs=zoneStyle(t.zone);return<div key={t.l} className="card" style={{padding:16,borderLeft:`4px solid ${zs.hex}`}}><div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}><span style={{fontSize:18,fontWeight:800,color:zs.hex}}>{t.v}</span><div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{t.l}</div><span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,background:zs.bg,color:zs.tc,marginLeft:'auto'}}>{t.zone}</span></div><div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}><strong style={{color:'#374151'}}>Action: </strong>{t.develop}</div></div>;})}</div></div>}
+    <div style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',borderRadius:14,padding:20,color:'#fff'}}><div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Recommended Development Programme</div><div style={{color:'#c7d2fe',fontSize:13,lineHeight:1.7}}>{c.copilot.recDetail}</div></div>
+  </div>);
 }
 
-/* ── DEVELOPMENT TAB ── */
-function DevTab({c}){
-  const devItems = c.teique ? c.teique.dev : [];
-  const hptiItems = c.hpti ? c.hpti.filter(t=>t.zone==='Excessive'||t.zone==='Low'||t.v<65) : [];
-  return (
-    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
-      {devItems.length>0&&(
-        <div>
-          <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>TEIQue — Priority Development Areas</div>
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-            {devItems.map((d,i)=>{
-              const cs=sc(d.v);
-              return (
-                <div key={i} className="card" style={{padding:18,borderLeft:`4px solid ${cs.hex}`}}>
-                  <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
-                    <span style={{fontSize:20,fontWeight:800,color:cs.hex}}>{d.v}%</span>
-                    <div style={{fontSize:14,fontWeight:700,color:'#1e293b'}}>{d.area}</div>
-                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
-                      background:cs.bg,color:cs.tc,marginLeft:'auto'}}>{cs.label}</span>
-                  </div>
-                  <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:10}}>
-                    <div className="bar" style={{height:'100%',width:d.v+'%',background:cs.hex,borderRadius:3}}/>
-                  </div>
-                  <div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}>
-                    <strong style={{color:'#374151'}}>Action: </strong>{d.action}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {hptiItems.length>0&&(
-        <div>
-          <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>HPTI — Leadership Development Focus</div>
-          <div style={{display:'flex',flexDirection:'column',gap:10}}>
-            {hptiItems.map(t=>{
-              const zs=zoneStyle(t.zone);
-              return (
-                <div key={t.l} className="card" style={{padding:16,borderLeft:`4px solid ${zs.hex}`}}>
-                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
-                    <span style={{fontSize:18,fontWeight:800,color:zs.hex}}>{t.v}</span>
-                    <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{t.l}</div>
-                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
-                      background:zs.bg,color:zs.tc,marginLeft:'auto'}}>{t.zone}</span>
-                  </div>
-                  <div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}>
-                    <strong style={{color:'#374151'}}>Action: </strong>{t.develop}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      {/* Recommended program */}
-      <div style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',borderRadius:14,padding:20,color:'#fff'}}>
-        <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Recommended Development Program</div>
-        <div style={{color:'#c7d2fe',fontSize:13,lineHeight:1.7}}>
-          {c.teique
-            ? '6–8 coaching sessions focused on emotion management and assertiveness. Pair with a 360° feedback pulse at 3 months to measure behavioural change. Leverage empathy and expression for modelling desired behaviours.'
-            : 'Structured decision-making frameworks to channel bold risk appetite. Leadership empathy workshops to address potential detachment signals. Quarterly ambiguity navigation sessions for scaling environments.'}
-        </div>
-      </div>
+/* ── Assessment Summary Tab (for candidates without full data) ── */
+function AssessmentSummaryTab({c,type}){
+  return(<div className="fade" style={{display:'flex',flexDirection:'column',gap:16}}>
+    <div style={{padding:'14px 18px',background:'#f0f9ff',border:'1px solid #bae6fd',borderRadius:10}}>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}><span style={{fontSize:13,fontWeight:700,color:'#0c4a6e'}}>{type==='teique'?'TEIQue Assessment Summary':type==='ppa'?'PPA Assessment Summary':'HPTI Assessment Summary'}</span><span style={{fontSize:9,fontWeight:700,padding:'2px 8px',borderRadius:20,background:'#dcfce7',color:'#166534'}}>Zero Resume Dependency</span></div>
+      <div style={{fontSize:13,color:'#475569',lineHeight:1.8}}>{c.assessmentSummary||'Full assessment report available on request.'}</div>
     </div>
-  );
+  </div>);
 }
 
 /* ── PROFILE ── */
 function Profile({c,onBack}){
-  const tabs=[
-    {id:'overview', l:'Overview'},
+  const hasFull={teique:!!c.teique,ppa:!!c.ppa,hpti:!!c.hpti};
+  const tabs=[{id:'overview',l:'Overview'},
     ...(c.assessments.includes('teique')?[{id:'teique',l:'Emotional Intelligence'}]:[]),
-    ...(c.assessments.includes('ppa')   ?[{id:'ppa',   l:'Behavioural Profile'}]:[]),
-    ...(c.assessments.includes('hpti')  ?[{id:'hpti',  l:'Leadership Traits'}]:[]),
-    {id:'dev', l:'Development Plan'},
-  ];
-  const [tab,setTab]=useState('overview');
-  return (
-    <div className="fade" style={{minHeight:'100%',background:'#f8fafc'}}>
-      {/* Topbar */}
-      <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'13px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>
-          <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif'}}>
-            <Icon d={ICONS.back} size={16} color="#64748b"/> Dashboard
-          </button>
-          <Icon d={ICONS.next} size={14} color="#cbd5e1"/>
-          <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span>
-        </div>
-        <div style={{display:'flex',gap:8}}>
-          <button style={{padding:'8px 14px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontWeight:500,color:'#374151',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
-            Export Report
-          </button>
-          <button style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
-            <Icon d={ICONS.chat} size={15} color="#fff"/> Request Contact
-          </button>
-        </div>
-      </div>
-
-      <div style={{padding:'24px 32px',display:'flex',flexDirection:'column',gap:20,maxWidth:1200}}>
-        {/* Hero */}
-        <div className="card" style={{padding:24}}>
-          <div style={{display:'flex',alignItems:'flex-start',gap:20}}>
-            <div style={{width:72,height:72,borderRadius:18,background:c.color,display:'flex',alignItems:'center',justifyContent:'center',
-              color:'#fff',fontWeight:800,fontSize:20,flexShrink:0,boxShadow:`0 6px 20px ${c.color}44`}}>
-              {c.initials}
-            </div>
-            <div style={{flex:1}}>
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
-                <div>
-                  <div style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>{c.name}</div>
-                  <div style={{fontSize:14,color:'#475569',fontWeight:500,marginTop:3}}>{c.title}</div>
-                  <div style={{display:'flex',gap:16,marginTop:6,fontSize:13,color:'#64748b'}}>
-                    <span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.pin} size={14} color="#94a3b8"/>{c.loc}</span>
-                    <span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.brief} size={14} color="#94a3b8"/>{c.exp} yrs experience</span>
-                  </div>
-                  <div style={{display:'flex',gap:6,marginTop:10}}>
-                    {c.assessments.map(a=>(
-                      <span key={a} style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:6,
-                        background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',
-                        color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1',
-                        border:`1px solid ${a==='teique'?'#c7d2fe':a==='ppa'?'#fbcfe8':'#bae6fd'}`}}>
-                        {a==='teique'?'TEIQue Assessed':a==='ppa'?'PPA Assessed':'HPTI Assessed'}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div style={{flexShrink:0,textAlign:'center'}}>
-                  <BigGauge v={c.cis}/>
-                  <div style={{fontSize:11,color:'#94a3b8',fontWeight:500,marginTop:2}}>Candidate Intelligence Score</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab bar */}
-        <div style={{display:'flex',background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:4,width:'fit-content',gap:2}}>
-          {tabs.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)}
-              style={{padding:'8px 18px',borderRadius:9,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,
-                fontFamily:'Inter,sans-serif',background:tab===t.id?'#4f46e5':'transparent',
-                color:tab===t.id?'#fff':'#64748b',transition:'all .15s'}}>
-              {t.l}
-            </button>
-          ))}
-        </div>
-
-        {tab==='overview' && <OverviewTab c={c}/>}
-        {tab==='teique'   && <TeIQueTab data={c.teique}/>}
-        {tab==='ppa'      && <PpaTab data={c.ppa}/>}
-        {tab==='hpti'     && <HptiTab traits={c.hpti} sourceInfo={c.hptiSourceInfo}/>}
-        {tab==='dev'      && <DevTab c={c}/>}
-      </div>
+    ...(c.assessments.includes('ppa')?[{id:'ppa',l:'Behavioural Profile'}]:[]),
+    ...(c.assessments.includes('hpti')?[{id:'hpti',l:'Leadership Traits'}]:[]),
+    {id:'dev',l:'Development Plan'}];
+  const[tab,setTab]=useState('overview');
+  return(
+  <div className="fade" style={{minHeight:'100%',background:'#f8fafc'}}>
+    <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'13px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
+      <div style={{display:'flex',alignItems:'center',gap:8}}><button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif'}}><Icon d={ICONS.back} size={16} color="#64748b"/>Dashboard</button><Icon d={ICONS.next} size={14} color="#cbd5e1"/><span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span></div>
+      <div style={{display:'flex',gap:8}}><button style={{padding:'8px 14px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontWeight:500,color:'#374151',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>Export</button><button style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}><Icon d={ICONS.chat} size={15} color="#fff"/>Contact</button></div>
     </div>
-  );
+    <div style={{padding:'24px 32px',display:'flex',flexDirection:'column',gap:20,maxWidth:1200}}>
+      {/* Hero */}
+      <div className="card" style={{padding:24}}><div style={{display:'flex',alignItems:'flex-start',gap:20}}>
+        <div style={{width:72,height:72,borderRadius:18,background:c.color,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:800,fontSize:20,flexShrink:0,boxShadow:`0 6px 20px ${c.color}44`}}>{c.initials}</div>
+        <div style={{flex:1}}><div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
+          <div><div style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>{c.name}</div><div style={{fontSize:14,color:'#475569',fontWeight:500,marginTop:3}}>{c.title}</div><div style={{display:'flex',gap:16,marginTop:6,fontSize:13,color:'#64748b'}}><span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.pin} size={14} color="#94a3b8"/>{c.loc}</span><span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.brief} size={14} color="#94a3b8"/>{c.exp} yrs</span></div>
+            <div style={{display:'flex',gap:6,marginTop:10,flexWrap:'wrap'}}><span style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:6,background:'#f1f5f9',color:'#475569',border:'1px solid #e2e8f0'}}>{c.industry}</span>{c.assessments.map(a=><span key={a} style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:6,background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1',border:`1px solid ${a==='teique'?'#c7d2fe':a==='ppa'?'#fbcfe8':'#bae6fd'}`}}>{a==='teique'?'TEIQue':a==='ppa'?'PPA':'HPTI'} Assessed</span>)}</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:8}}>{c.skills.map(s=><span key={s} style={{fontSize:10,padding:'2px 7px',borderRadius:4,background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}>{s}</span>)}</div>
+          </div>
+          <div style={{flexShrink:0,textAlign:'center'}}><BigGauge v={c.cis}/><div style={{fontSize:11,color:'#94a3b8',fontWeight:500,marginTop:2}}>Intelligence Score</div></div>
+        </div></div>
+      </div></div>
+      {/* Tab bar */}
+      <div style={{display:'flex',background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:4,width:'fit-content',gap:2,flexWrap:'wrap'}}>{tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:'8px 16px',borderRadius:9,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,fontFamily:'Inter,sans-serif',background:tab===t.id?'#4f46e5':'transparent',color:tab===t.id?'#fff':'#64748b',transition:'all .15s'}}>{t.l}</button>)}</div>
+      {tab==='overview'&&<OverviewTab c={c}/>}
+      {tab==='teique'&&(hasFull.teique?<TeIQueTab data={c.teique}/>:<AssessmentSummaryTab c={c} type="teique"/>)}
+      {tab==='ppa'&&(hasFull.ppa?<PpaTab data={c.ppa}/>:<AssessmentSummaryTab c={c} type="ppa"/>)}
+      {tab==='hpti'&&(hasFull.hpti?<HptiTab traits={c.hpti} sourceInfo={c.hptiSourceInfo}/>:<AssessmentSummaryTab c={c} type="hpti"/>)}
+      {tab==='dev'&&<DevTab c={c}/>}
+    </div>
+  </div>);
 }
 
 /* ── APP ── */
@@ -1003,14 +498,7 @@ function App(){
   const[selected,setSelected]=useState(null);
   const select=c=>{setSelected(c);setView('profile');};
   const nav=v=>{setView(v);if(v!=='profile')setSelected(null);};
-  return (
-    <div style={{display:'flex',height:'100vh',overflow:'hidden',fontFamily:'Inter,sans-serif'}}>
-      <Sidebar view={view} setView={nav}/>
-      <main style={{flex:1,overflow:'auto'}}>
-        {view==='profile'&&selected?<Profile c={selected} onBack={()=>nav('dashboard')}/>:<Dashboard onSelect={select}/>}
-      </main>
-    </div>
-  );
+  return(<div style={{display:'flex',height:'100vh',overflow:'hidden',fontFamily:'Inter,sans-serif'}}><Sidebar view={view} setView={nav}/><main style={{flex:1,overflow:'auto'}}>{view==='profile'&&selected?<Profile c={selected} onBack={()=>nav('dashboard')}/>:<Dashboard onSelect={select}/>}</main></div>);
 }
 ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
 </script>
