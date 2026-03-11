@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TalentSignal — Candidate Intelligence Platform</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f8fafc}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:14px}
+.card-h{transition:box-shadow .18s,transform .18s;cursor:pointer}
+.card-h:hover{box-shadow:0 12px 30px -5px rgba(0,0,0,.12);transform:translateY(-2px)}
+.fade{animation:fi .25s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.bar{transition:width 1s cubic-bezier(.4,0,.2,1)}
+.sidebar{width:256px;min-width:256px;background:#030712;height:100vh;display:flex;flex-direction:column;border-right:1px solid #1f2937}
+.pulse{animation:p 2s infinite}@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.23.2/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+
+/* ── colour helper ── */
+const sc = v => v>=85?{hex:'#10b981',label:'Excellent',bg:'#ecfdf5',tc:'#065f46'}
+              :v>=70?{hex:'#4f46e5',label:'Strong',   bg:'#eef2ff',tc:'#3730a3'}
+              :v>=55?{hex:'#f59e0b',label:'Good',     bg:'#fffbeb',tc:'#92400e'}
+              :      {hex:'#ef4444',label:'Developing',bg:'#fef2f2',tc:'#991b1b'};
+
+const zoneStyle = z => ({
+  Optimal:   {bg:'#dcfce7',tc:'#166534',hex:'#16a34a'},
+  Moderate:  {bg:'#fef9c3',tc:'#854d0e',hex:'#ca8a04'},
+  Excessive: {bg:'#fae8ff',tc:'#6b21a8',hex:'#9333ea'},
+  Low:       {bg:'#fee2e2',tc:'#991b1b',hex:'#dc2626'},
+}[z] || {bg:'#f1f5f9',tc:'#475569',hex:'#64748b'});
+
+/* ── DATA ── */
+const CANDIDATES = [
+{
+  id:1, name:'Mr. XX Sample', title:'Senior Business Development Director',
+  loc:'Dubai, UAE', initials:'XX', color:'#4f46e5', exp:12,
+  cis:83, successPct:76, hiringRisk:'Medium',
+  riskReasons:['Emotion management (60%) may surface in conflict scenarios','Assertiveness gap (64%) could limit hard-negotiation outcomes','Average tenure 1.8 yrs — monitor early engagement closely'],
+  scores:[
+    {k:'fit',      l:'Role Fit',      v:87, d:'Skills match, industry relevance & experience alignment'},
+    {k:'impact',   l:'Impact',        v:78, d:'Revenue impact, team scale & project complexity signals'},
+    {k:'traj',     l:'Trajectory',    v:82, d:'Promotion velocity & career progression pattern'},
+    {k:'stability',l:'Stability',     v:64, d:'Retention predictor — avg tenure & role-switching pattern'},
+    {k:'skill',    l:'Skill Depth',   v:80, d:'Depth vs breadth of stated competencies'},
+    {k:'culture',  l:'Culture Fit',   v:81, d:'Behavioural & communication style alignment'},
+  ],
+  copilot:{
+    strengths:['Exceptional Emotional Intelligence (97%) — rare at senior level','Near-perfect Relationships (99%), Empathy (95%), Expression (97%)','Self-Motivation (94%) and Stress Management (93%) — performs under pressure','Integrative leadership: works through people, delegates, sees big picture'],
+    concerns:['Emotion Management at 60% — recovery from conflict may be slow','Assertiveness at 64% — may underperform in direct negotiation scenarios','Tendency to act impulsively; stability score reflects attrition risk'],
+    rec:'Proceed to Interview',
+    recColor:'#059669',
+    recBg:'#ecfdf5',
+    recDetail:'Strong cultural and leadership fit. Schedule 6–8 coaching sessions focused on emotion management and assertiveness before onboarding.',
+  },
+  assessments:['teique','ppa'],
+  teique:{
+    overall:97,
+    factors:[
+      {l:'Wellbeing',    v:94, color:'#10b981'},
+      {l:'Emotionality', v:97, color:'#4f46e5'},
+      {l:'Self-Control', v:91, color:'#0ea5e9'},
+      {l:'Sociability',  v:73, color:'#f59e0b'},
+    ],
+    groups:[
+      {g:'Wellbeing',    items:[{l:'Happiness',v:99},{l:'Optimism',v:83},{l:'Self-Esteem',v:99}]},
+      {g:'Emotionality', items:[{l:'Emotion Expression',v:97},{l:'Emotion Perception',v:97},{l:'Empathy',v:95},{l:'Relationships',v:99}]},
+      {g:'Self-Control', items:[{l:'Emotion Regulation',v:86},{l:'Impulse Control',v:93},{l:'Stress Management',v:93}]},
+      {g:'Sociability',  items:[{l:'Social Awareness',v:95},{l:'Assertiveness',v:64},{l:'Emotion Management',v:60}]},
+    ],
+    global:[{l:'Self-Motivation',v:94},{l:'Adaptability',v:66}],
+    roleFit:['Senior client-facing leadership','Founder / CEO roles','Culture & talent leadership','Coaching and stakeholder-heavy assignments'],
+    dev:[
+      {area:'Emotion Management',v:60,action:'Adopt a 2–3 min pause-reflect-label routine after triggering events. Weekly log + peer debrief.'},
+      {area:'Assertiveness',     v:64,action:'Practice "I + impact" feedback script in 3 low-risk conversations/week. Progressively raise stakes.'},
+      {area:'Adaptability',      v:66,action:'Take 2 cross-functional stretch assignments over 6 months. One-page weekly reflection.'},
+    ],
+  },
+  ppa:{
+    style:'Influencer (I-type)',
+    selfImage:'Integrative leader who works through people with an outgoing interest in others. Poised, confident, and persuasive — with a tendency to act impulsively or oversell. Coordinates well, delegates effectively, and sees the big picture.',
+    motivators:['Popularity and social recognition','Democratic relationships and inclusive environments','Tangible rewards, power, challenge, and advancement','Favourable working conditions and freedom from control'],
+    strengths:['Influential','Assertive','Friendly','Decisive','Confident','Self-starting','Persuasive','Driving','Mobile','Alert','Independent','Persistent'],
+    characteristics:['Positive, optimistic, enthusiastic','Influential, persuasive, verbal communicator','Competitive, assertive, self-starter','Results-oriented and receptive to change','Quick-paced decision maker who motivates others'],
+    orgValue:['Build relationships and generate enthusiasm','Drive results and take initiative','Open doors and develop networks','Accept challenges and question the status quo','Offer fresh perspectives and innovative solutions'],
+    underPressure:'Emphasizes people skills — positive, persuasive, and communicative. Relies on interpersonal strengths to manage stress.',
+    mask:'Slight behavioural moderation to appear more thorough and organized, though restlessness remains.',
+  },
+},{
+  id:2, name:'Mrs. XXX Sample', title:'Senior Operations Director',
+  loc:'London, UK', initials:'XXX', color:'#0891b2', exp:15,
+  cis:78, successPct:71, hiringRisk:'Low',
+  riskReasons:['Excessive Risk Approach (84) may lead to impulsive strategic decisions','Curiosity at Moderate (44) — may resist significant innovation initiatives'],
+  scores:[
+    {k:'fit',      l:'Role Fit',      v:75, d:'Skills match, industry relevance & experience alignment'},
+    {k:'impact',   l:'Impact',        v:71, d:'Revenue impact, team scale & project complexity signals'},
+    {k:'traj',     l:'Trajectory',    v:79, d:'Promotion velocity & career progression pattern'},
+    {k:'stability',l:'Stability',     v:82, d:'Retention predictor — avg tenure & role-switching pattern'},
+    {k:'skill',    l:'Skill Depth',   v:68, d:'Depth vs breadth of stated competencies'},
+    {k:'culture',  l:'Culture Fit',   v:74, d:'Behavioural & communication style alignment'},
+  ],
+  copilot:{
+    strengths:['Optimal Conscientiousness (74) — highly organized, goal-driven, strong follow-through','Optimal Adjustment (66) — calm under pressure, resilient leadership under stress','High Stability score (82) — low attrition risk, long-term retention likely','Collaborative by nature — fosters team dynamics over personal recognition'],
+    concerns:['Excessive Risk Approach (84) — bold but may overlook consequences of impulsive decisions','Moderate Curiosity (44) — prefers proven methods; may resist bold innovation roadmaps','Moderate Ambiguity Acceptance (55) — needs structural clarity in ambiguous scaling phases'],
+    rec:'Proceed to Interview',
+    recColor:'#059669',
+    recBg:'#ecfdf5',
+    recDetail:'Strong operational leadership candidate. Pair with structured decision frameworks to channel bold risk appetite into strategic rather than reactive moves.',
+  },
+  assessments:['hpti'],
+  hpti:[
+    {l:'Conscientiousness',v:74,zone:'Optimal',  color:'#ec4899',impl:'Highly organized & driven — watch for perfectionism',         develop:'Balance perfectionism with practicality; delegate and define "fit-for-purpose" standards.'},
+    {l:'Adjustment',       v:66,zone:'Optimal',  color:'#0ea5e9',impl:'Calm under pressure — may appear emotionally detached',       develop:'Empathize with stressed colleagues; your calmness may be misread as detachment.'},
+    {l:'Curiosity',        v:44,zone:'Moderate', color:'#10b981',impl:'Balanced innovator — prefers stability over radical change',   develop:'Encourage innovation by requesting evidence-based proposals from your team.'},
+    {l:'Risk Approach',    v:84,zone:'Excessive',color:'#f59e0b',impl:'Bold & proactive — may overlook consequences',                develop:'Channel risk-taking into strategic opportunities; avoid impulsive decisions.'},
+    {l:'Ambiguity Accept.',v:55,zone:'Moderate', color:'#8b5cf6',impl:'Handles complexity with discomfort — needs clear structure',  develop:'Clarify ambiguity proactively; bridge structured and flexible thinkers.'},
+    {l:'Competitiveness',  v:52,zone:'Moderate', color:'#6366f1',impl:'Collaborative — not driven by power or recognition',          develop:'Foster team dynamics; praise others and support diverse motivations.'},
+  ],
+}];
+
+/* ── small helpers ── */
+function Icon({d,size=20,color='currentColor'}){
+  return <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke={color} strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d={d}/></svg>;
+}
+const ICONS = {
+  home:'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+  users:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+  chart:'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+  cog:'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065zM15 12a3 3 0 11-6 0 3 3 0 016 0z',
+  back:'M15 19l-7-7 7-7',
+  next:'M9 5l7 7-7 7',
+  pin:'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z',
+  brief:'M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z',
+  bolt:'M13 10V3L4 14h7v7l9-11h-7z',
+  check:'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+  warn:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
+  chat:'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+  search:'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z',
+  plus:'M12 4v16m8-8H4',
+};
+
+/* ── MiniRing ── */
+function MiniRing({v,size=44}){
+  const r=16,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);
+  return <svg width={size} height={size} viewBox="0 0 40 40">
+    <circle cx="20" cy="20" r={r} fill="none" stroke="#e2e8f0" strokeWidth="3.5"/>
+    <circle cx="20" cy="20" r={r} fill="none" stroke={c.hex} strokeWidth="3.5"
+      strokeDasharray={`${fill} ${circ}`} strokeLinecap="round" transform="rotate(-90 20 20)"/>
+    <text x="20" y="20" textAnchor="middle" dominantBaseline="middle" fontSize="9.5"
+      fontWeight="700" fill="#1e293b" fontFamily="Inter,sans-serif">{v}</text>
+  </svg>;
+}
+
+/* ── Big Gauge ── */
+function BigGauge({v}){
+  const r=50,circ=2*Math.PI*r,fill=(v/100)*circ,c=sc(v);
+  return <svg width="130" height="130" viewBox="0 0 130 130">
+    <circle cx="65" cy="65" r={r} fill="none" stroke="#f1f5f9" strokeWidth="10"/>
+    <circle cx="65" cy="65" r={r} fill="none" stroke={c.hex} strokeWidth="10"
+      strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
+      transform="rotate(-90 65 65)" style={{filter:`drop-shadow(0 0 8px ${c.hex}55)`}}/>
+    <text x="65" y="58" textAnchor="middle" fontSize="28" fontWeight="800" fill="#0f172a" fontFamily="Inter,sans-serif">{v}</text>
+    <text x="65" y="76" textAnchor="middle" fontSize="10" fill="#94a3b8" fontFamily="Inter,sans-serif">/100</text>
+    <text x="65" y="91" textAnchor="middle" fontSize="10" fill={c.hex} fontWeight="700" fontFamily="Inter,sans-serif">{c.label}</text>
+  </svg>;
+}
+
+/* ── HPTI Semicircle Gauge ── */
+function HptiGauge({trait}){
+  const {l,v,zone,color,impl,develop}=trait;
+  const cx=110,cy=90,r=65,W=220,H=110;
+  const toRad=d=>d*Math.PI/180;
+  const pt=s=>{const a=toRad(180-s*1.8);return[cx+r*Math.cos(a),cy-r*Math.sin(a)];};
+  const arc=(s1,s2)=>{
+    const [x1,y1]=pt(s1);
+    const [x2,y2]=pt(Math.min(s2,99.9));
+    return `M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 0 0 ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+  };
+  const zones=[{f:0,t:25,c:'#fee2e2'},{f:25,t:60,c:'#fef9c3'},{f:60,t:80,c:'#d1fae5'},{f:80,t:100,c:'#ede9fe'}];
+  const nRad=toRad(180-v*1.8);
+  const nLen=r-14;
+  const nX=(cx+nLen*Math.cos(nRad)).toFixed(1);
+  const nY=(cy-nLen*Math.sin(nRad)).toFixed(1);
+  const zs=zoneStyle(zone);
+  return (
+    <div className="card" style={{padding:'16px 10px 14px',textAlign:'center'}}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:'block',margin:'0 auto'}}>
+        {zones.map(z=><path key={z.f} d={arc(z.f,z.t)} fill="none" stroke={z.c} strokeWidth={14} strokeLinecap="butt"/>)}
+        <path d={arc(0,v)} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" opacity="0.9"/>
+        {[{lbl:'Low',mid:12},{lbl:'Moderate',mid:42},{lbl:'Optimal',mid:70},{lbl:'Excessive',mid:90}].map(({lbl,mid})=>{
+          const a=toRad(180-mid*1.8);
+          const lr=r+18;
+          return <text key={lbl} x={(cx+lr*Math.cos(a)).toFixed(1)} y={(cy-lr*Math.sin(a)).toFixed(1)}
+            textAnchor="middle" dominantBaseline="middle" fontSize="7" fill="#94a3b8" fontFamily="Inter,sans-serif">{lbl}</text>;
+        })}
+        <line x1={cx} y1={cy} x2={nX} y2={nY} stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round"/>
+        <circle cx={cx} cy={cy} r="5" fill="#1e293b"/>
+        <circle cx={cx} cy={cy} r="2.5" fill="white"/>
+        <text x={cx} y={cy-20} textAnchor="middle" fontSize="26" fontWeight="800" fill="#0f172a" fontFamily="Inter,sans-serif">{v}</text>
+        <line x1={cx-r-6} y1={cy} x2={cx+r+6} y2={cy} stroke="#e2e8f0" strokeWidth="1"/>
+      </svg>
+      <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginTop:2}}>{l}</div>
+      <span style={{display:'inline-block',fontSize:10,fontWeight:700,padding:'2px 9px',borderRadius:20,marginTop:5,background:zs.bg,color:zs.tc}}>{zone}</span>
+      <div style={{fontSize:11,color:'#64748b',marginTop:6,lineHeight:1.5,padding:'0 6px'}}>{impl}</div>
+    </div>
+  );
+}
+
+/* ── TEIQue Radar (4 factors) ── */
+function FactorRadar({factors}){
+  const n=factors.length,cx=120,cy=110,r=80,size=240;
+  const angle=i=>(i/n)*2*Math.PI-Math.PI/2;
+  const pt=(val,i)=>{const a=angle(i),rv=(val/100)*r;return[cx+rv*Math.cos(a),cy+rv*Math.sin(a)];};
+  const grid=[25,50,75,100];
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{display:'block',margin:'0 auto'}}>
+      {grid.map(g=><polygon key={g}
+        points={factors.map((_,i)=>{const[x,y]=pt(g,i);return`${x},${y}`}).join(' ')}
+        fill="none" stroke="#e2e8f0" strokeWidth="1"/>)}
+      {factors.map((_,i)=>{const[x,y]=pt(100,i);return<line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e2e8f0" strokeWidth="1"/>;} )}
+      <polygon
+        points={factors.map((f,i)=>{const[x,y]=pt(f.v,i);return`${x},${y}`}).join(' ')}
+        fill="#4f46e5" fillOpacity="0.12" stroke="#4f46e5" strokeWidth="2.5" strokeLinejoin="round"/>
+      {factors.map((f,i)=>{
+        const[x,y]=pt(f.v,i);
+        return <circle key={i} cx={x} cy={y} r="5" fill={f.color} stroke="white" strokeWidth="1.5"/>;
+      })}
+      {factors.map((f,i)=>{
+        const lr=r+26,a=angle(i),lx=cx+lr*Math.cos(a),ly=cy+lr*Math.sin(a);
+        return <text key={i} x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
+          fontSize="11" fill="#475569" fontWeight="600" fontFamily="Inter,sans-serif">{f.l}</text>;
+      })}
+    </svg>
+  );
+}
+
+/* ── Sidebar ── */
+const NAV=[
+  {id:'dashboard',l:'Dashboard',i:'home'},
+  {id:'candidates',l:'Candidates',i:'users'},
+  {id:'analytics',l:'Analytics',i:'chart'},
+  {id:'settings',l:'Settings',i:'cog'},
+];
+function Sidebar({view,setView}){
+  return (
+    <div className="sidebar">
+      <div style={{padding:'20px 24px 16px',borderBottom:'1px solid #1f2937'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10}}>
+          <div style={{width:36,height:36,background:'#4f46e5',borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <Icon d={ICONS.bolt} size={18} color="#fff"/>
+          </div>
+          <div>
+            <div style={{color:'#fff',fontWeight:700,fontSize:15}}>TalentSignal</div>
+            <div style={{color:'#6b7280',fontSize:11}}>Candidate Intelligence</div>
+          </div>
+        </div>
+      </div>
+      <nav style={{flex:1,padding:'16px 12px',display:'flex',flexDirection:'column',gap:2}}>
+        <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Menu</div>
+        {NAV.map(item=>{
+          const active=view===item.id||(view==='profile'&&item.id==='candidates');
+          return <button key={item.id} onClick={()=>setView(item.id)}
+            style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 10px',borderRadius:8,border:'none',
+              cursor:'pointer',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif',
+              background:active?'#4f46e5':'transparent',color:active?'#fff':'#9ca3af',transition:'all .15s'}}>
+            <Icon d={ICONS[item.i]} size={17} color={active?'#fff':'#6b7280'}/>
+            {item.l}
+            {item.id==='candidates'&&<span style={{marginLeft:'auto',fontSize:11,fontWeight:700,padding:'1px 7px',borderRadius:20,
+              background:active?'#6366f1':'#1f2937',color:active?'#e0e7ff':'#6b7280'}}>2</span>}
+          </button>;
+        })}
+      </nav>
+      <div style={{padding:'0 12px 12px'}}>
+        <div style={{color:'#4b5563',fontSize:10,fontWeight:700,letterSpacing:'.1em',textTransform:'uppercase',padding:'0 8px 10px'}}>Assessments</div>
+        {[{n:'TEIQue',c:'#4f46e5'},{n:'PPA',c:'#ec4899'},{n:'HPTI',c:'#0891b2'}].map(s=>(
+          <div key={s.n} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 8px'}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:s.c}} className="pulse"/>
+            <span style={{color:'#6b7280',fontSize:12}}>{s.n}</span>
+            <span style={{marginLeft:'auto',width:6,height:6,borderRadius:'50%',background:'#10b981'}}/>
+          </div>
+        ))}
+      </div>
+      <div style={{padding:'12px',borderTop:'1px solid #1f2937'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,padding:'8px',borderRadius:8,cursor:'pointer'}}>
+          <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#6366f1,#8b5cf6)',
+            display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+            <span style={{color:'#fff',fontSize:11,fontWeight:700}}>RK</span>
+          </div>
+          <div>
+            <div style={{color:'#f9fafb',fontSize:13,fontWeight:600}}>Rachel Kim</div>
+            <div style={{color:'#6b7280',fontSize:11}}>Senior Recruiter</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Dashboard ── */
+function Dashboard({onSelect}){
+  const[q,setQ]=useState('');
+  const list=CANDIDATES.filter(c=>c.name.toLowerCase().includes(q.toLowerCase())||c.title.toLowerCase().includes(q.toLowerCase()));
+  const riskColor={Low:'#059669',Medium:'#d97706',High:'#dc2626'};
+  const riskBg={Low:'#ecfdf5',Medium:'#fffbeb',High:'#fef2f2'};
+  return (
+    <div className="fade" style={{minHeight:'100%'}}>
+      <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'14px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
+        <div>
+          <div style={{fontSize:19,fontWeight:800,color:'#0f172a'}}>Candidate Intelligence Dashboard</div>
+          <div style={{fontSize:13,color:'#94a3b8',marginTop:2}}>Assessment-backed hiring decisions</div>
+        </div>
+        <button style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+          <Icon d={ICONS.plus} size={15} color="#fff"/> Add Candidate
+        </button>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:16,padding:'24px 32px 0'}}>
+        {[
+          {l:'Candidates Assessed',v:'2',sub:'TEIQue · PPA · HPTI',bg:'#eef2ff',ic:'#4f46e5',d:ICONS.users},
+          {l:'Avg CIS Score',       v:'81',sub:'Above market median',bg:'#ecfdf5',ic:'#10b981',d:ICONS.bolt},
+          {l:'Assessment Types',   v:'3',sub:'TEIQue, PPA, HPTI',bg:'#eff6ff',ic:'#3b82f6',d:ICONS.chart},
+          {l:'Proceed to Interview',v:'2',sub:'Both recommended',bg:'#f0fdf4',ic:'#16a34a',d:ICONS.check},
+        ].map((s,i)=>(
+          <div key={i} className="card" style={{padding:18,display:'flex',alignItems:'flex-start',gap:12}}>
+            <div style={{width:38,height:38,borderRadius:10,background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <Icon d={s.d} size={18} color={s.ic}/>
+            </div>
+            <div>
+              <div style={{fontSize:24,fontWeight:800,color:'#0f172a',lineHeight:1}}>{s.v}</div>
+              <div style={{fontSize:12,fontWeight:600,color:'#374151',marginTop:2}}>{s.l}</div>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:1}}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div style={{padding:'20px 32px 0',display:'flex',alignItems:'center',gap:10}}>
+        <div style={{position:'relative',maxWidth:360}}>
+          <div style={{position:'absolute',left:11,top:'50%',transform:'translateY(-50%)'}}>
+            <Icon d={ICONS.search} size={15} color="#94a3b8"/>
+          </div>
+          <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search candidates..."
+            style={{width:340,padding:'9px 12px 9px 34px',background:'#fff',border:'1px solid #e2e8f0',
+              borderRadius:8,fontSize:13,outline:'none',fontFamily:'Inter,sans-serif'}}/>
+        </div>
+        <span style={{fontSize:12,color:'#94a3b8',marginLeft:'auto'}}>{list.length} candidates</span>
+      </div>
+
+      {/* Candidate cards */}
+      <div style={{padding:'20px 32px 32px',display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:20}}>
+        {list.map(c=>{
+          const C=sc(c.cis);
+          return (
+            <div key={c.id} className="card card-h" onClick={()=>onSelect(c)} style={{padding:24}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:16}}>
+                <div style={{display:'flex',alignItems:'center',gap:12}}>
+                  <div style={{width:52,height:52,borderRadius:14,background:c.color,display:'flex',alignItems:'center',
+                    justifyContent:'center',color:'#fff',fontWeight:800,fontSize:15,flexShrink:0,boxShadow:`0 4px 12px ${c.color}44`}}>
+                    {c.initials}
+                  </div>
+                  <div>
+                    <div style={{fontSize:16,fontWeight:700,color:'#0f172a'}}>{c.name}</div>
+                    <div style={{fontSize:13,color:'#64748b',marginTop:2}}>{c.title}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:12,marginTop:5,fontSize:12,color:'#94a3b8'}}>
+                      <span style={{display:'flex',alignItems:'center',gap:3}}>
+                        <Icon d={ICONS.pin} size={13} color="#94a3b8"/>{c.loc}
+                      </span>
+                      <span style={{display:'flex',alignItems:'center',gap:3}}>
+                        <Icon d={ICONS.brief} size={13} color="#94a3b8"/>{c.exp} yrs exp
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{textAlign:'center',flexShrink:0}}>
+                  <BigGauge v={c.cis}/>
+                  <div style={{fontSize:10,color:'#94a3b8',fontWeight:500,marginTop:2}}>Intelligence Score</div>
+                </div>
+              </div>
+
+              {/* Assessment badges */}
+              <div style={{display:'flex',gap:6,marginBottom:14}}>
+                {c.assessments.map(a=>(
+                  <span key={a} style={{fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:6,
+                    background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',
+                    color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1'}}>
+                    {a==='teique'?'TEIQue':a==='ppa'?'PPA':'HPTI'}
+                  </span>
+                ))}
+              </div>
+
+              {/* Score bars */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 16px',marginBottom:14}}>
+                {c.scores.map(s=>{
+                  const cs=sc(s.v);
+                  return (
+                    <div key={s.k}>
+                      <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                        <span style={{fontSize:11,color:'#64748b'}}>{s.l}</span>
+                        <span style={{fontSize:11,fontWeight:700,color:cs.hex}}>{s.v}</span>
+                      </div>
+                      <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
+                        <div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Footer */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',paddingTop:12,borderTop:'1px solid #f1f5f9'}}>
+                <div style={{display:'flex',alignItems:'center',gap:5}}>
+                  <span style={{fontSize:11,color:'#64748b'}}>Hiring Risk:</span>
+                  <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
+                    background:riskBg[c.hiringRisk],color:riskColor[c.hiringRisk]}}>{c.hiringRisk}</span>
+                </div>
+                <span style={{fontSize:12,fontWeight:700,color:'#4f46e5',display:'flex',alignItems:'center',gap:3}}>
+                  View Full Profile <Icon d={ICONS.next} size={13} color="#4f46e5"/>
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── OVERVIEW TAB ── */
+function OverviewTab({c}){
+  const rC={Low:'#059669',Medium:'#d97706',High:'#dc2626'};
+  const rB={Low:'#ecfdf5',Medium:'#fffbeb',High:'#fef2f2'};
+  return (
+    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      {/* CIS scores grid */}
+      <div>
+        <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Candidate Intelligence Score Breakdown</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
+          {c.scores.map(s=>{
+            const cs=sc(s.v);
+            return (
+              <div key={s.k} className="card" style={{padding:16,borderLeft:`4px solid ${cs.hex}`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+                  <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{s.l}</div>
+                  <div style={{fontSize:22,fontWeight:800,color:cs.hex}}>{s.v}</div>
+                </div>
+                <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:8}}>
+                  <div className="bar" style={{height:'100%',width:s.v+'%',background:cs.hex,borderRadius:3}}/>
+                </div>
+                <div style={{fontSize:11,color:'#94a3b8',lineHeight:1.4}}>{s.d}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Success prediction + hiring risk */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        <div className="card" style={{padding:18}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Success Prediction</div>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <div style={{fontSize:36,fontWeight:800,color:'#4f46e5'}}>{c.successPct}%</div>
+            <div>
+              <div style={{height:8,width:200,background:'#f1f5f9',borderRadius:4,overflow:'hidden',marginBottom:4}}>
+                <div className="bar" style={{height:'100%',width:c.successPct+'%',background:'#4f46e5',borderRadius:4}}/>
+              </div>
+              <div style={{fontSize:11,color:'#94a3b8'}}>Probability of high performance at 12 months</div>
+            </div>
+          </div>
+        </div>
+        <div className="card" style={{padding:18}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Hiring Risk Assessment</div>
+          <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
+            <span style={{fontSize:20,fontWeight:800,padding:'4px 14px',borderRadius:8,
+              background:rB[c.hiringRisk],color:rC[c.hiringRisk]}}>{c.hiringRisk}</span>
+            <span style={{fontSize:12,color:'#64748b'}}>Risk Level</span>
+          </div>
+          {c.riskReasons.map((r,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:4}}>
+              <Icon d={ICONS.warn} size={14} color={rC[c.hiringRisk]}/>
+              <span style={{fontSize:11,color:'#64748b',lineHeight:1.4}}>{r}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* AI Copilot */}
+      <div className="card" style={{overflow:'hidden'}}>
+        <div style={{background:'linear-gradient(135deg,#1e1b4b,#312e81)',padding:'14px 20px',display:'flex',alignItems:'center',gap:8}}>
+          <div style={{width:30,height:30,background:'rgba(255,255,255,.15)',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <Icon d={ICONS.chat} size={16} color="#fff"/>
+          </div>
+          <div style={{color:'#fff',fontWeight:700,fontSize:14}}>AI Recruiter Copilot</div>
+          <span style={{marginLeft:'auto',fontSize:10,fontWeight:700,padding:'2px 8px',borderRadius:20,
+            background:c.copilot.recBg,color:c.copilot.recColor}}>{c.copilot.rec}</span>
+        </div>
+        <div style={{padding:20,display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:'#059669',marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
+              <Icon d={ICONS.check} size={14} color="#059669"/> Top Strengths
+            </div>
+            {c.copilot.strengths.map((s,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
+                <span style={{width:5,height:5,borderRadius:'50%',background:'#10b981',marginTop:6,flexShrink:0}}/>
+                <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:'#d97706',marginBottom:8,display:'flex',alignItems:'center',gap:5}}>
+              <Icon d={ICONS.warn} size={14} color="#d97706"/> Watch Points
+            </div>
+            {c.copilot.concerns.map((s,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
+                <span style={{width:5,height:5,borderRadius:'50%',background:'#f59e0b',marginTop:6,flexShrink:0}}/>
+                <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{margin:'0 20px 20px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:10,padding:'12px 14px'}}>
+          <span style={{fontSize:12,fontWeight:700,color:'#374151'}}>Recommendation: </span>
+          <span style={{fontSize:12,color:'#64748b'}}>{c.copilot.recDetail}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── TEIQUE TAB ── */
+function TeIQueTab({data}){
+  const groupColors={'Wellbeing':'#10b981','Emotionality':'#4f46e5','Self-Control':'#0ea5e9','Sociability':'#f59e0b'};
+  return (
+    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      {/* Header row */}
+      <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:20}}>
+        <div className="card" style={{padding:24,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minWidth:220}}>
+          <div style={{fontSize:11,fontWeight:700,color:'#94a3b8',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:8}}>Overall TEI Score</div>
+          <div style={{fontSize:64,fontWeight:800,color:'#4f46e5',lineHeight:1}}>{data.overall}</div>
+          <div style={{fontSize:13,color:'#94a3b8',marginTop:4}}>Percentile</div>
+          <div style={{marginTop:12,padding:'4px 14px',background:'#eef2ff',borderRadius:20}}>
+            <span style={{fontSize:12,fontWeight:700,color:'#4338ca'}}>Exceptional</span>
+          </div>
+          <div style={{marginTop:16,display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
+            {data.global.map(g=>{
+              const c=sc(g.v);
+              return <div key={g.l}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                  <span style={{fontSize:11,color:'#64748b'}}>{g.l}</span>
+                  <span style={{fontSize:11,fontWeight:700,color:c.hex}}>{g.v}%</span>
+                </div>
+                <div style={{height:5,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
+                  <div className="bar" style={{height:'100%',width:g.v+'%',background:c.hex,borderRadius:3}}/>
+                </div>
+              </div>;
+            })}
+          </div>
+        </div>
+        <div className="card" style={{padding:24}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:4}}>Factor Profile</div>
+          <div style={{fontSize:12,color:'#94a3b8',marginBottom:4}}>Four core TEIQue dimensions</div>
+          <FactorRadar factors={data.factors}/>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
+            {data.factors.map(f=>{
+              const c=sc(f.v);
+              return <div key={f.l} style={{display:'flex',alignItems:'center',gap:8}}>
+                <span style={{width:10,height:10,borderRadius:'50%',background:f.color,flexShrink:0}}/>
+                <span style={{fontSize:12,color:'#374151',flex:1}}>{f.l}</span>
+                <span style={{fontSize:12,fontWeight:700,color:c.hex}}>{f.v}</span>
+              </div>;
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Facet breakdown */}
+      <div>
+        <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>Facet Breakdown by Factor</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+          {data.groups.map(grp=>(
+            <div key={grp.g} className="card" style={{padding:16,borderTop:`3px solid ${groupColors[grp.g]}`}}>
+              <div style={{fontSize:12,fontWeight:700,color:groupColors[grp.g],marginBottom:12,textTransform:'uppercase',letterSpacing:'.06em'}}>{grp.g}</div>
+              {grp.items.map(item=>{
+                const c=sc(item.v);
+                return <div key={item.l} style={{marginBottom:10}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                    <span style={{fontSize:12,color:'#374151'}}>{item.l}</span>
+                    <span style={{fontSize:12,fontWeight:700,color:c.hex}}>{item.v}%</span>
+                  </div>
+                  <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden'}}>
+                    <div className="bar" style={{height:'100%',width:item.v+'%',background:c.hex,borderRadius:3}}/>
+                  </div>
+                </div>;
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Role fit */}
+      <div className="card" style={{padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>High-Fit Roles (TEIQue-based)</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+          {data.roleFit.map(r=>(
+            <span key={r} style={{fontSize:12,fontWeight:600,padding:'5px 12px',background:'#eef2ff',color:'#4338ca',borderRadius:8,border:'1px solid #c7d2fe'}}>{r}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── PPA TAB ── */
+function PpaTab({data}){
+  return (
+    <div className="fade" style={{display:'flex',flexDirection:'column',gap:16}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        {/* Style */}
+        <div className="card" style={{padding:20,borderTop:'3px solid #ec4899'}}>
+          <div style={{fontSize:11,fontWeight:700,color:'#ec4899',textTransform:'uppercase',letterSpacing:'.08em',marginBottom:6}}>Behavioural Style</div>
+          <div style={{fontSize:20,fontWeight:800,color:'#0f172a',marginBottom:8}}>{data.style}</div>
+          <div style={{fontSize:13,color:'#475569',lineHeight:1.7}}>{data.selfImage}</div>
+        </div>
+        {/* Under pressure */}
+        <div style={{display:'flex',flexDirection:'column',gap:14}}>
+          <div className="card" style={{padding:16}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Under Pressure</div>
+            <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.underPressure}</div>
+          </div>
+          <div className="card" style={{padding:16}}>
+            <div style={{fontSize:12,fontWeight:700,color:'#0f172a',marginBottom:6}}>Work Mask</div>
+            <div style={{fontSize:12,color:'#475569',lineHeight:1.6}}>{data.mask}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Motivators */}
+      <div className="card" style={{padding:18}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Motivators</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {data.motivators.map((m,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'8px 10px',background:'#fdf2f8',borderRadius:8}}>
+              <span style={{fontSize:14,flexShrink:0}}>{'🏆🤝💼🕊️'[i]}</span>
+              <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{m}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+        {/* Strengths */}
+        <div className="card" style={{padding:18}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Strengths</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+            {data.strengths.map(s=>(
+              <span key={s} style={{fontSize:11,fontWeight:600,padding:'3px 9px',background:'#f0fdf4',color:'#166534',borderRadius:6,border:'1px solid #bbf7d0'}}>{s}</span>
+            ))}
+          </div>
+        </div>
+        {/* Org value */}
+        <div className="card" style={{padding:18}}>
+          <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:10}}>Value to Organisation</div>
+          {data.orgValue.map((v,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'flex-start',gap:7,marginBottom:7}}>
+              <span style={{width:5,height:5,borderRadius:'50%',background:'#ec4899',marginTop:7,flexShrink:0}}/>
+              <span style={{fontSize:12,color:'#374151',lineHeight:1.5}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── HPTI TAB ── */
+function HptiTab({traits}){
+  return (
+    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div style={{padding:'14px 18px',background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:12,fontSize:13,color:'#475569',lineHeight:1.6}}>
+        <strong style={{color:'#1e293b'}}>About HPTI: </strong>
+        Six stable personality traits linked to senior leadership potential. Scores are classified as <em>Low, Moderate, Optimal,</em> or <em>Excessive</em> — each indicating different leadership implications. Traits are not predictive in isolation; success also depends on skills, motivation, and experience.
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
+        {traits.map(t=><HptiGauge key={t.l} trait={t}/>)}
+      </div>
+      <div className="card" style={{padding:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:'#1e293b',marginBottom:12}}>Development Focus Areas</div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {traits.map(t=>(
+            <div key={t.l} style={{display:'flex',alignItems:'flex-start',gap:12,padding:'10px 14px',background:'#f8fafc',borderRadius:10,border:'1px solid #e2e8f0'}}>
+              <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6,flexShrink:0,marginTop:1,
+                background:zoneStyle(t.zone).bg,color:zoneStyle(t.zone).tc}}>{t.zone}</span>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:'#1e293b',marginBottom:2}}>{t.l}</div>
+                <div style={{fontSize:12,color:'#64748b',lineHeight:1.5}}>{t.develop}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── DEVELOPMENT TAB ── */
+function DevTab({c}){
+  const devItems = c.teique ? c.teique.dev : [];
+  const hptiItems = c.hpti ? c.hpti.filter(t=>t.zone==='Excessive'||t.zone==='Low'||t.v<65) : [];
+  return (
+    <div className="fade" style={{display:'flex',flexDirection:'column',gap:20}}>
+      {devItems.length>0&&(
+        <div>
+          <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>TEIQue — Priority Development Areas</div>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {devItems.map((d,i)=>{
+              const cs=sc(d.v);
+              return (
+                <div key={i} className="card" style={{padding:18,borderLeft:`4px solid ${cs.hex}`}}>
+                  <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:8}}>
+                    <span style={{fontSize:20,fontWeight:800,color:cs.hex}}>{d.v}%</span>
+                    <div style={{fontSize:14,fontWeight:700,color:'#1e293b'}}>{d.area}</div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
+                      background:cs.bg,color:cs.tc,marginLeft:'auto'}}>{cs.label}</span>
+                  </div>
+                  <div style={{height:6,background:'#f1f5f9',borderRadius:3,overflow:'hidden',marginBottom:10}}>
+                    <div className="bar" style={{height:'100%',width:d.v+'%',background:cs.hex,borderRadius:3}}/>
+                  </div>
+                  <div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}>
+                    <strong style={{color:'#374151'}}>Action: </strong>{d.action}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {hptiItems.length>0&&(
+        <div>
+          <div style={{fontSize:14,fontWeight:700,color:'#1e293b',marginBottom:12}}>HPTI — Leadership Development Focus</div>
+          <div style={{display:'flex',flexDirection:'column',gap:10}}>
+            {hptiItems.map(t=>{
+              const zs=zoneStyle(t.zone);
+              return (
+                <div key={t.l} className="card" style={{padding:16,borderLeft:`4px solid ${zs.hex}`}}>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:8}}>
+                    <span style={{fontSize:18,fontWeight:800,color:zs.hex}}>{t.v}</span>
+                    <div style={{fontSize:13,fontWeight:700,color:'#1e293b'}}>{t.l}</div>
+                    <span style={{fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:20,
+                      background:zs.bg,color:zs.tc,marginLeft:'auto'}}>{t.zone}</span>
+                  </div>
+                  <div style={{fontSize:12,color:'#475569',lineHeight:1.6,padding:'10px 12px',background:'#f8fafc',borderRadius:8}}>
+                    <strong style={{color:'#374151'}}>Action: </strong>{t.develop}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* Recommended program */}
+      <div style={{background:'linear-gradient(135deg,#4f46e5,#7c3aed)',borderRadius:14,padding:20,color:'#fff'}}>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Recommended Development Program</div>
+        <div style={{color:'#c7d2fe',fontSize:13,lineHeight:1.7}}>
+          {c.teique
+            ? '6–8 coaching sessions focused on emotion management and assertiveness. Pair with a 360° feedback pulse at 3 months to measure behavioural change. Leverage empathy and expression for modelling desired behaviours.'
+            : 'Structured decision-making frameworks to channel bold risk appetite. Leadership empathy workshops to address potential detachment signals. Quarterly ambiguity navigation sessions for scaling environments.'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── PROFILE ── */
+function Profile({c,onBack}){
+  const tabs=[
+    {id:'overview', l:'Overview'},
+    ...(c.assessments.includes('teique')?[{id:'teique',l:'Emotional Intelligence'}]:[]),
+    ...(c.assessments.includes('ppa')   ?[{id:'ppa',   l:'Behavioural Profile'}]:[]),
+    ...(c.assessments.includes('hpti')  ?[{id:'hpti',  l:'Leadership Traits'}]:[]),
+    {id:'dev', l:'Development Plan'},
+  ];
+  const [tab,setTab]=useState('overview');
+  return (
+    <div className="fade" style={{minHeight:'100%',background:'#f8fafc'}}>
+      {/* Topbar */}
+      <div style={{background:'#fff',borderBottom:'1px solid #e2e8f0',padding:'13px 32px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:10}}>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',border:'none',cursor:'pointer',color:'#64748b',fontSize:13,fontWeight:500,fontFamily:'Inter,sans-serif'}}>
+            <Icon d={ICONS.back} size={16} color="#64748b"/> Dashboard
+          </button>
+          <Icon d={ICONS.next} size={14} color="#cbd5e1"/>
+          <span style={{fontSize:13,fontWeight:700,color:'#0f172a'}}>{c.name}</span>
+        </div>
+        <div style={{display:'flex',gap:8}}>
+          <button style={{padding:'8px 14px',background:'#fff',border:'1px solid #e2e8f0',borderRadius:8,fontSize:13,fontWeight:500,color:'#374151',cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+            Export Report
+          </button>
+          <button style={{display:'flex',alignItems:'center',gap:6,padding:'8px 16px',background:'#4f46e5',color:'#fff',border:'none',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer',fontFamily:'Inter,sans-serif'}}>
+            <Icon d={ICONS.chat} size={15} color="#fff"/> Request Contact
+          </button>
+        </div>
+      </div>
+
+      <div style={{padding:'24px 32px',display:'flex',flexDirection:'column',gap:20,maxWidth:1200}}>
+        {/* Hero */}
+        <div className="card" style={{padding:24}}>
+          <div style={{display:'flex',alignItems:'flex-start',gap:20}}>
+            <div style={{width:72,height:72,borderRadius:18,background:c.color,display:'flex',alignItems:'center',justifyContent:'center',
+              color:'#fff',fontWeight:800,fontSize:20,flexShrink:0,boxShadow:`0 6px 20px ${c.color}44`}}>
+              {c.initials}
+            </div>
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between'}}>
+                <div>
+                  <div style={{fontSize:22,fontWeight:800,color:'#0f172a'}}>{c.name}</div>
+                  <div style={{fontSize:14,color:'#475569',fontWeight:500,marginTop:3}}>{c.title}</div>
+                  <div style={{display:'flex',gap:16,marginTop:6,fontSize:13,color:'#64748b'}}>
+                    <span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.pin} size={14} color="#94a3b8"/>{c.loc}</span>
+                    <span style={{display:'flex',alignItems:'center',gap:4}}><Icon d={ICONS.brief} size={14} color="#94a3b8"/>{c.exp} yrs experience</span>
+                  </div>
+                  <div style={{display:'flex',gap:6,marginTop:10}}>
+                    {c.assessments.map(a=>(
+                      <span key={a} style={{fontSize:11,fontWeight:700,padding:'3px 10px',borderRadius:6,
+                        background:a==='teique'?'#eef2ff':a==='ppa'?'#fdf2f8':'#e0f2fe',
+                        color:a==='teique'?'#4338ca':a==='ppa'?'#9d174d':'#0369a1',
+                        border:`1px solid ${a==='teique'?'#c7d2fe':a==='ppa'?'#fbcfe8':'#bae6fd'}`}}>
+                        {a==='teique'?'TEIQue Assessed':a==='ppa'?'PPA Assessed':'HPTI Assessed'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{flexShrink:0,textAlign:'center'}}>
+                  <BigGauge v={c.cis}/>
+                  <div style={{fontSize:11,color:'#94a3b8',fontWeight:500,marginTop:2}}>Candidate Intelligence Score</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab bar */}
+        <div style={{display:'flex',background:'#fff',border:'1px solid #e2e8f0',borderRadius:12,padding:4,width:'fit-content',gap:2}}>
+          {tabs.map(t=>(
+            <button key={t.id} onClick={()=>setTab(t.id)}
+              style={{padding:'8px 18px',borderRadius:9,border:'none',cursor:'pointer',fontSize:13,fontWeight:600,
+                fontFamily:'Inter,sans-serif',background:tab===t.id?'#4f46e5':'transparent',
+                color:tab===t.id?'#fff':'#64748b',transition:'all .15s'}}>
+              {t.l}
+            </button>
+          ))}
+        </div>
+
+        {tab==='overview' && <OverviewTab c={c}/>}
+        {tab==='teique'   && <TeIQueTab data={c.teique}/>}
+        {tab==='ppa'      && <PpaTab data={c.ppa}/>}
+        {tab==='hpti'     && <HptiTab traits={c.hpti}/>}
+        {tab==='dev'      && <DevTab c={c}/>}
+      </div>
+    </div>
+  );
+}
+
+/* ── APP ── */
+function App(){
+  const[view,setView]=useState('dashboard');
+  const[selected,setSelected]=useState(null);
+  const select=c=>{setSelected(c);setView('profile');};
+  const nav=v=>{setView(v);if(v!=='profile')setSelected(null);};
+  return (
+    <div style={{display:'flex',height:'100vh',overflow:'hidden',fontFamily:'Inter,sans-serif'}}>
+      <Sidebar view={view} setView={nav}/>
+      <main style={{flex:1,overflow:'auto'}}>
+        {view==='profile'&&selected?<Profile c={selected} onBack={()=>nav('dashboard')}/>:<Dashboard onSelect={select}/>}
+      </main>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+</script>
+</body>
+</html>
